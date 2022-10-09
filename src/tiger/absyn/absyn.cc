@@ -370,7 +370,6 @@ void FieldList::Print(FILE *out, int d) const {
     fprintf(out, "fieldList()");
 }
 
-
 void ExpList::Print(FILE *out, int d) const {
   Indent(out, d);
   if (!exp_list_.empty()) {
