@@ -22,7 +22,6 @@ Table *A::AssignStm::Interp(Table *t) const {
   // TODO: put your code here (lab1).
   IntAndTable *new_table = exp->Interp(t);
   return new_table->t->Update(id, new_table->i);
-
 }
 
 int A::PrintStm::MaxArgs() const {
@@ -36,9 +35,7 @@ Table *A::PrintStm::Interp(Table *t) const {
   return table->t;
 }
 
-int A::IdExp::MaxArgs() const {
-  return 1;
-}
+int A::IdExp::MaxArgs() const { return 1; }
 
 IntAndTable *A::IdExp::Interp(Table *t) const {
   int i = t->Lookup(id);
@@ -46,30 +43,26 @@ IntAndTable *A::IdExp::Interp(Table *t) const {
   return result;
 }
 
-int A::NumExp::MaxArgs() const {
-  return 1;
-}
+int A::NumExp::MaxArgs() const { return 1; }
 
 IntAndTable *A::NumExp::Interp(Table *t) const {
   IntAndTable *result = new IntAndTable(num, t);
   return result;
 }
 
-int A::OpExp::MaxArgs() const {
-  return 1;
-}
+int A::OpExp::MaxArgs() const { return 1; }
 
 IntAndTable *A::OpExp::Interp(Table *t) const {
   IntAndTable *table1 = left->Interp(t);
   IntAndTable *table2 = right->Interp(table1->t);
   int result = 0;
-  if(oper == 0) {
+  if (oper == 0) {
     result = table1->i + table2->i;
-  } else if(oper == 1) {
+  } else if (oper == 1) {
     result = table1->i - table2->i;
-  } else if(oper == 2) {
+  } else if (oper == 2) {
     result = table1->i * table2->i;
-  } else if(oper == 3) {
+  } else if (oper == 3) {
     result = table1->i / table2->i;
   }
   // an error may incur
@@ -90,24 +83,18 @@ int A::PairExpList::MaxArgs() const {
   return exp->MaxArgs() + tail->MaxArgs();
 }
 
-int A::PairExpList::NumExps() {
-  return 1 + tail->NumExps();
-}
+int A::PairExpList::NumExps() { return 1 + tail->NumExps(); }
 
-IntAndTable *A::PairExpList::Interp(Table *t) const{
+IntAndTable *A::PairExpList::Interp(Table *t) const {
   IntAndTable *table = exp->Interp(t);
   // PRINT!!!
   printf("%d ", table->i);
   return tail->Interp(table->t);
 }
 
-int A::LastExpList::MaxArgs() const {
-  return exp->MaxArgs();
-}
+int A::LastExpList::MaxArgs() const { return exp->MaxArgs(); }
 
-int A::LastExpList::NumExps() {
-  return 1;
-}
+int A::LastExpList::NumExps() { return 1; }
 
 IntAndTable *A::LastExpList::Interp(Table *t) const {
   IntAndTable *table = exp->Interp(t);
@@ -129,4 +116,4 @@ int Table::Lookup(const std::string &key) const {
 Table *Table::Update(const std::string &key, int val) const {
   return new Table(key, val, this);
 }
-}  // namespace A
+} // namespace A
