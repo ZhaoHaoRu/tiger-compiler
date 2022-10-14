@@ -142,6 +142,7 @@ quote \"
     "\\^"[A-Z]  {adjustStr(); string_buf_ += (matched()[2] - 'A' + 1);}    /* why 2? */
     "\\^["   {adjustStr(); string_buf_ += "\e";}
     {quote}   {
+      std::string str = matched();
       adjustStr();
       setMatched(string_buf_);
       string_buf_.clear();
