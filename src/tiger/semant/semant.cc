@@ -1,3 +1,4 @@
+#include <unordered_set>
 #include "tiger/absyn/absyn.h"
 #include "tiger/semant/semant.h"
 
@@ -103,8 +104,6 @@ type::Ty *CallExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
     auto itr_2 = arg_list.begin();
 
     while(itr_1 != ty_list.end()) {
-      // absyn::Exp* arg = *itr_2;
-      // type::Ty* param_type = *itr_1;
       if(itr_2 == arg_list.end()) {
         errormsg->Error(pos_, "function call not have enough param");
         return type::IntTy::Instance();
@@ -157,16 +156,12 @@ type::Ty *OpExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
         errormsg->Error(right_->pos_, "right integer or string required");
       }
       if(!left_ty->IsSameType(right_ty)) {
-        // errormsg->Error(right_->pos_, "same type required");
-        // errormsg->Error(left_->pos_, "same type required");
         errormsg->Error(pos_, "same type required");
       }
       break;
     default:
       if(!left_ty->IsSameType(right_ty)) {
         errormsg->Error(pos_, "same type required");
-        // errormsg->Error(right_->pos_, "same type required");
-        // errormsg->Error(left_->pos_, "same type required");
       }
       break;
   }
@@ -348,11 +343,6 @@ type::Ty *ForExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
   tenv->BeginScope();
   venv->Enter(var_, new env::VarEntry(type::IntTy::Instance(), true));
   type::Ty *body_ty = body_->SemAnalyze(venv, tenv, labelcount + 1, errormsg);
-  // TODO: here I am not sure
-  // if(typeid(*body_ty) != typeid(type::VoidTy)) {
-  //   errormsg->Error(body_->pos_, "the for body's type must be void");
-  //   return type::IntTy::Instance();
-  // }
   tenv->EndScope();
   venv->EndScope();
 
@@ -429,12 +419,15 @@ void FunctionDec::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
                              int labelcount, err::ErrorMsg *errormsg) const {
   /* TODO: Put your lab4 code here */
   std::list<FunDec *> func_dec_list = functions_->GetList();
+  std::unordered_set<sym::Symbol*> sym_table; 
+
   for(auto func : func_dec_list) {
-    // enter function name, param and value
-    if(venv->Look(func->name_) != nullptr) {
+    if(sym_table.count(func->name_)) {
       errormsg->Error(pos_, "two functions have the same name");
       return;
-    } 
+    } else {
+      sym_table.insert(func->name_);
+    }
 
     absyn::FieldList *params = func->params_;
     type::Ty *result_ty;
@@ -517,12 +510,14 @@ void TypeDec::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
                          err::ErrorMsg *errormsg) const {
   /* TODO: Put your lab4 code here */
   std::list<NameAndTy *> name_and_ty_list = types_->GetList();
-  
+  std::unordered_set<sym::Symbol*> sym_table; 
+
   // put into tenv
   for(auto type : name_and_ty_list) {
-    if(tenv->Look(type->name_)) {
+    if(sym_table.count(type->name_)) {
       errormsg->Error(pos_, "two types have the same name");
     } else {
+      sym_table.insert(type->name_);
       tenv->Enter(type->name_, new type::NameTy(type->name_, nullptr));
     }
   }
