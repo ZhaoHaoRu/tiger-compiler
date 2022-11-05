@@ -160,32 +160,6 @@ temp::Temp *X64RegManager::ReturnValue() {
 }
 
 
-class InFrameAccess : public Access {
-public:
-  int offset;
-
-  explicit InFrameAccess(int offset) : Access(IN_FRAME), offset(offset) {}
-
-  /* TODO: Put your lab5 code here */
-  tree::Exp *ToExp(tree::Exp *frame_ptr) const override {
-    return new tree::BinopExp(tree::BinOp::PLUS_OP, frame_ptr, new tree::ConstExp(offset));
-  }
-};
-
-
-class InRegAccess : public Access {
-public:
-  temp::Temp *reg;
-
-  explicit InRegAccess(temp::Temp *reg) : Access(IN_REG), reg(reg) {}
-
-  /* TODO: Put your lab5 code here */
-  tree::Exp *ToExp(tree::Exp *framePtr) const override {
-    return new tree::TempExp(reg);
-  }
-};
-
-
 /* TODO: Put your lab5 code here */
 X64Frame::X64Frame(temp::Label *name, std::list<bool> formals) : Frame(name, formals) {
   // initialize
@@ -263,4 +237,8 @@ assem::Proc* procEntryExit3(frame::Frame* frame, assem::InstrList* body) {
   return nullptr;
 }
 
+
+tree::Exp* ExternalCall(std::string s, tree::ExpList* args) {
+  return new tree::CallExp(new tree::NameExp(temp::LabelFactory::NamedLabel(s)), args);
+}
 } // namespace frame

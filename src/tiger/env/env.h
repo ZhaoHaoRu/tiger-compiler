@@ -19,8 +19,8 @@ public:
   enum Kind {FUNC, VAR};
   Kind kind_;
 
-  explicit EnvEntry(bool readonly = true) : readonly_(readonly) {}
-  explicit EnvEntry(bool readonly = true, Kind kind = Kind::VAR): readonly_(readonly), kind_(kind) {}
+  explicit EnvEntry(bool readonly) : readonly_(readonly) {}
+  explicit EnvEntry(bool readonly = true, Kind kind = Kind::FUNC): readonly_(readonly), kind_(kind) {}
   virtual ~EnvEntry() = default;
 };
 
@@ -31,11 +31,11 @@ public:
 
   // For lab4(semantic analysis) only
   explicit VarEntry(type::Ty *ty, bool readonly = false)
-      : EnvEntry(readonly), ty_(ty), access_(nullptr){};
+      : EnvEntry(readonly, Kind::VAR), ty_(ty), access_(nullptr){};
 
   // For lab5(translate IR tree)
   VarEntry(tr::Access *access, type::Ty *ty, bool readonly = false)
-      : EnvEntry(readonly), ty_(ty), access_(access){};
+      : EnvEntry(readonly, Kind::VAR), ty_(ty), access_(access){};
 };
 
 class FunEntry : public EnvEntry {

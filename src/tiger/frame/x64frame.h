@@ -50,5 +50,31 @@ public:
   Access* AllocLocal(bool escape) override;
 };
 
+
+class InFrameAccess : public Access {
+public:
+  int offset;
+
+  explicit InFrameAccess(int offset) : Access(IN_FRAME), offset(offset) {}
+
+  /* TODO: Put your lab5 code here */
+  tree::Exp *ToExp(tree::Exp *frame_ptr) const override {
+    return new tree::BinopExp(tree::BinOp::PLUS_OP, frame_ptr, new tree::ConstExp(offset));
+  }
+};
+
+
+class InRegAccess : public Access {
+public:
+  temp::Temp *reg;
+
+  explicit InRegAccess(temp::Temp *reg) : Access(IN_REG), reg(reg) {}
+
+  /* TODO: Put your lab5 code here */
+  tree::Exp *ToExp(tree::Exp *framePtr) const override {
+    return new tree::TempExp(reg);
+  }
+};
+
 } // namespace frame
 #endif // TIGER_COMPILER_X64FRAME_H

@@ -131,11 +131,14 @@ public:
   void PushBack(Frag *frag) { frags_.push_back(frag); }
   const std::list<Frag*> &GetList() { return frags_; }
 
+
+
 private:
   std::list<Frag*> frags_;
 };
 
 /* TODO: Put your lab5 code here */
+tree::Exp* ExternalCall(std::string s, tree::ExpList* args);
 
 } // namespace frame
 
