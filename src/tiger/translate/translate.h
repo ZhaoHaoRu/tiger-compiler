@@ -10,6 +10,7 @@
 #include "tiger/env/env.h"
 #include "tiger/errormsg/errormsg.h"
 #include "tiger/frame/frame.h"
+#include "tiger/frame/x64frame.h"
 #include "tiger/semant/types.h"
 
 namespace tr {
@@ -61,9 +62,8 @@ public:
   /* TODO: Put your lab5 code here */
   Level(frame::Frame *f, Level *p): frame_(f), parent_(p) {}
   std::list<Access*> Formals(Level *level) { return {};}
-  Level* newLevel(temp::Label *name, std::list<bool> formals, Level *parent) {
-    frame::Frame *frame = new frame::X64Frame(name, formals);
-    return new Level(frame, parent);
+  static Level* newLevel(temp::Label *name, std::list<bool> formals, Level *parent) {
+    return new Level(new frame::X64Frame(name, formals), parent);
   }
 };
 
@@ -91,7 +91,7 @@ public:
 
       temp::Label *main_label = temp::LabelFactory::NamedLabel("tiger_main");
       frame::Frame *main_frame = new frame::X64Frame(main_label, {});
-      main_level_ = std::make_unique<Level>(new Level(main_frame, nullptr));
+      main_level_ = std::make_unique<Level>(main_frame, nullptr);
   }
 
 private:

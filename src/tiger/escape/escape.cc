@@ -107,7 +107,7 @@ void IfExp::Traverse(esc::EscEnvPtr env, int depth) {
   test_->Traverse(env, depth);
   then_->Traverse(env, depth);
   if(elsee_) {
-    then_->Traverse(env, depth);
+    elsee_->Traverse(env, depth);
   }
 }
 
@@ -145,7 +145,11 @@ void LetExp::Traverse(esc::EscEnvPtr env, int depth) {
   for(auto dec : dec_list) {
     dec->Traverse(env, depth);
   }
-  body_->Traverse(env, depth);
+
+  if(body_) {
+    body_->Traverse(env, depth);
+  }
+  
   env->EndScope();
 }
 
@@ -185,12 +189,12 @@ void FunctionDec::Traverse(esc::EscEnvPtr env, int depth) {
 
 void VarDec::Traverse(esc::EscEnvPtr env, int depth) {
   /* TODO: Put your lab5 code here */
-  escape_ = false;
-  env->Enter(var_, new esc::EscapeEntry(depth, &escape_));
-
   if(init_) {
     init_->Traverse(env, depth);
   }
+
+  escape_ = false;
+  env->Enter(var_, new esc::EscapeEntry(depth, &escape_));
 }
 
 void TypeDec::Traverse(esc::EscEnvPtr env, int depth) {

@@ -161,7 +161,7 @@ temp::Temp *X64RegManager::ReturnValue() {
 
 
 /* TODO: Put your lab5 code here */
-X64Frame::X64Frame(temp::Label *name, std::list<bool> formals) : Frame(name, formals) {
+X64Frame::X64Frame(temp::Label *name, std::list<bool> formals){
   // initialize
   view_shift_ = nullptr;
 

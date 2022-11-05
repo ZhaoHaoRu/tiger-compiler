@@ -39,7 +39,7 @@ public:
 };
 
 
-class X64Frame : public Frame {
+class X64Frame : public frame::Frame {
 public:
   /* TODO: Put your lab5 code here */
   X64Frame(temp::Label *name, std::list<bool> formals);

@@ -92,7 +92,6 @@ public:
   int s_offset;
 
   // TODO: perhaps need to supply
-  Frame(temp::Label *name, std::list<bool> formals): label_(name) {};
   ///@brief for view shift
   virtual void newFrame(std::list<bool> formals) = 0;
   virtual Access* AllocLocal(bool escape) = 0;
@@ -139,7 +138,9 @@ private:
 
 /* TODO: Put your lab5 code here */
 tree::Exp* ExternalCall(std::string s, tree::ExpList* args);
-
+tree::Stm* ProcEntryExit1(Frame *frame, tree::Stm *stm);
+assem::InstrList* ProcEntryExit2(assem::InstrList* body);
+assem::Proc* procEntryExit3(frame::Frame* frame, assem::InstrList* body);
 } // namespace frame
 
 #endif
