@@ -17,6 +17,7 @@ class Canon;
 
 namespace assem {
 class InstrList;
+class Proc;
 } // namespace assem
 
 namespace frame {

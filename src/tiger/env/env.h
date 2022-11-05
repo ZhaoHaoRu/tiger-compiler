@@ -16,7 +16,11 @@ class EnvEntry {
 public:
   bool readonly_;
 
+  enum Kind {FUNC, VAR};
+  Kind kind_;
+
   explicit EnvEntry(bool readonly = true) : readonly_(readonly) {}
+  explicit EnvEntry(bool readonly = true, Kind kind = Kind::VAR): readonly_(readonly), kind_(kind) {}
   virtual ~EnvEntry() = default;
 };
 

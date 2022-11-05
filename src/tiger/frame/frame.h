@@ -3,6 +3,8 @@
 
 #include <list>
 #include <memory>
+// TODO: add this lib
+#include <vector>
 #include <string>
 
 #include "tiger/frame/temp.h"
@@ -69,13 +71,32 @@ protected:
 class Access {
 public:
   /* TODO: Put your lab5 code here */
-  
+  enum Kind {IN_REG, IN_FRAME};
+  Kind kind_;
+
+  Access(Kind kind): kind_(kind) {}
+
+  virtual tree::Exp *ToExp(tree::Exp *framePtr) const = 0;
+
   virtual ~Access() = default;
   
 };
 
 class Frame {
   /* TODO: Put your lab5 code here */
+public:
+  std::list<frame::Access *> formals_;
+  std::list<frame::Access *> locals_;
+  temp::Label *label_;
+  tree::Stm* view_shift_;
+  int s_offset;
+
+  // TODO: perhaps need to supply
+  Frame(temp::Label *name, std::list<bool> formals): label_(name) {};
+  ///@brief for view shift
+  virtual void newFrame(std::list<bool> formals) = 0;
+  virtual Access* AllocLocal(bool escape) = 0;
+
 };
 
 /**

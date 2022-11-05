@@ -3,6 +3,8 @@
 
 #include <list>
 #include <memory>
+#include <cassert>
+#include <iostream>
 
 #include "tiger/absyn/absyn.h"
 #include "tiger/env/env.h"
@@ -57,6 +59,12 @@ public:
   Level *parent_;
 
   /* TODO: Put your lab5 code here */
+  Level(frame::Frame *f, Level *p): frame_(f), parent_(p) {}
+  std::list<Access*> Formals(Level *level) { return {};}
+  Level* newLevel(temp::Label *name, std::list<bool> formals, Level *parent) {
+    frame::Frame *frame = new frame::X64Frame(name, formals);
+    return new Level(frame, parent);
+  }
 };
 
 class ProgTr {
@@ -75,7 +83,16 @@ public:
   std::unique_ptr<err::ErrorMsg> TransferErrormsg() {
     return std::move(errormsg_);
   }
+  
+  ProgTr(std::unique_ptr<absyn::AbsynTree> absyn_tree, std::unique_ptr<err::ErrorMsg> errormsg): 
+    absyn_tree_(std::move(absyn_tree)), errormsg_(std::move(errormsg)){
+      tenv_ = std::make_unique<env::TEnv>();
+      venv_ = std::make_unique<env::VEnv>();
 
+      temp::Label *main_label = temp::LabelFactory::NamedLabel("tiger_main");
+      frame::Frame *main_frame = new frame::X64Frame(main_label, {});
+      main_level_ = std::make_unique<Level>(new Level(main_frame, nullptr));
+  }
 
 private:
   std::unique_ptr<absyn::AbsynTree> absyn_tree_;
