@@ -25,6 +25,10 @@ public:
     for(auto &patch : patch_list_) *patch = label;
   }
 
+  void AddPatch(temp::Label *label) {
+    patch_list_.emplace_back(&label);
+  }
+
   static PatchList JoinPatch(const PatchList &first, const PatchList &second) {
     PatchList ret(first.GetList());
     for(auto &patch : second.patch_list_) {
@@ -89,7 +93,7 @@ public:
       tenv_ = std::make_unique<env::TEnv>();
       venv_ = std::make_unique<env::VEnv>();
 
-      temp::Label *main_label = temp::LabelFactory::NamedLabel("tiger_main");
+      temp::Label *main_label = temp::LabelFactory::NamedLabel("tigermain");
       frame::Frame *main_frame = new frame::X64Frame(main_label, {});
       main_level_ = std::make_unique<Level>(main_frame, nullptr);
   }

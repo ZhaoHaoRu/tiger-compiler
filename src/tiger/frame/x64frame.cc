@@ -8,22 +8,22 @@ namespace frame {
 const int WORDSIZE = 8;
 
 X64RegManager::X64RegManager():RegManager() {
-  temp::Temp *rax = nullptr;
-  temp::Temp *rbx = nullptr;
-  temp::Temp *rcx = nullptr;
-  temp::Temp *rdx = nullptr;
-  temp::Temp *rsi = nullptr;
-  temp::Temp *rdi = nullptr;
-  temp::Temp *rbp = nullptr;
-  temp::Temp *rsp = nullptr;
-  temp::Temp *r8 = nullptr;
-  temp::Temp *r9 = nullptr;
-  temp::Temp *r10 = nullptr;
-  temp::Temp *r11 = nullptr;
-  temp::Temp *r12 = nullptr;
-  temp::Temp *r13 = nullptr;
-  temp::Temp *r14 = nullptr;
-  temp::Temp *r15 = nullptr;
+  temp::Temp *rax = temp::TempFactory::NewTemp();
+  temp::Temp *rbx = temp::TempFactory::NewTemp();
+  temp::Temp *rcx = temp::TempFactory::NewTemp();
+  temp::Temp *rdx = temp::TempFactory::NewTemp();
+  temp::Temp *rsi = temp::TempFactory::NewTemp();
+  temp::Temp *rdi = temp::TempFactory::NewTemp();
+  temp::Temp *rbp = temp::TempFactory::NewTemp();
+  temp::Temp *rsp = temp::TempFactory::NewTemp();
+  temp::Temp *r8 = temp::TempFactory::NewTemp();
+  temp::Temp *r9 = temp::TempFactory::NewTemp();
+  temp::Temp *r10 = temp::TempFactory::NewTemp();
+  temp::Temp *r11 = temp::TempFactory::NewTemp();
+  temp::Temp *r12 = temp::TempFactory::NewTemp();
+  temp::Temp *r13 = temp::TempFactory::NewTemp();
+  temp::Temp *r14 = temp::TempFactory::NewTemp();
+  temp::Temp *r15 = temp::TempFactory::NewTemp();
 
   // add the register to temp map and reg
   std::string reg_name = "%rax";
@@ -55,6 +55,10 @@ X64RegManager::X64RegManager():RegManager() {
   temp_map_->Enter(rbp, &reg_name);
 
   regs_.emplace_back(rsp);
+  reg_name = "%rsp";
+  temp_map_->Enter(rsp, &reg_name);
+
+  regs_.emplace_back(r8);
   reg_name = "%r8";
   temp_map_->Enter(r8, &reg_name);
 
@@ -100,16 +104,18 @@ temp::TempList *X64RegManager::Registers() {
   temp::TempList *result = new temp::TempList();
   std::list<temp::Temp *> dest_list = result->GetList();
   dest_list = initial_list;
+  // for debug
+  assert(result->GetList().size() == 15);
   return result;
 }
 
 
 temp::TempList *X64RegManager::ArgRegs() {
   temp::TempList *result = new temp::TempList();
-  result->Append(regs_[2]);
-  result->Append(regs_[3]);
-  result->Append(regs_[4]);
   result->Append(regs_[5]);
+  result->Append(regs_[4]);
+  result->Append(regs_[3]);
+  result->Append(regs_[2]);
   result->Append(regs_[8]);
   result->Append(regs_[9]);
   return result;
@@ -118,6 +124,14 @@ temp::TempList *X64RegManager::ArgRegs() {
 
 temp::TempList *X64RegManager::CallerSaves() {
   temp::TempList *result = new temp::TempList();
+  result->Append(regs_[0]);
+  result->Append(regs_[2]);
+  result->Append(regs_[3]);
+  result->Append(regs_[4]);
+  result->Append(regs_[5]);
+  result->Append(regs_[8]);
+  result->Append(regs_[9]);
+  result->Append(regs_[10]);
   result->Append(regs_[10]);
   result->Append(regs_[11]);
   return result;
@@ -131,12 +145,16 @@ temp::TempList *X64RegManager::CalleeSaves() {
   result->Append(regs_[12]);
   result->Append(regs_[13]);
   result->Append(regs_[14]);
+  result->Append(regs_[15]);
   return result;
 }
 
 
 temp::TempList *X64RegManager::ReturnSink() {
-  return nullptr;
+  temp::TempList *result = CalleeSaves();
+  result->Append(StackPointer());
+  result->Append(ReturnValue());
+  return result;
 }
 
 
@@ -164,6 +182,7 @@ temp::Temp *X64RegManager::ReturnValue() {
 X64Frame::X64Frame(temp::Label *name, std::list<bool> formals){
   // initialize
   view_shift_ = nullptr;
+  label_ = name;
 
   // alloc register or in frame
   for(auto formal : formals) {
@@ -192,7 +211,7 @@ void X64Frame::newFrame(std::list<bool> formals) {
       src = new tree::TempExp(*it);
       ++it;
     } else {
-      src = new tree::BinopExp(tree::BinOp::PLUS_OP, new tree::TempExp(reg_manager->FramePointer()), new tree::ConstExp((nth - max_inreg) * WORDSIZE));
+      src = new tree::BinopExp(tree::BinOp::PLUS_OP, new tree::TempExp(reg_manager->FramePointer()), new tree::ConstExp((nth - max_inreg + 1) * WORDSIZE));
     }
     ++nth;
   }

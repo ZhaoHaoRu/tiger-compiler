@@ -88,7 +88,7 @@ public:
   std::list<frame::Access *> formals_;
   std::list<frame::Access *> locals_;
   temp::Label *label_;
-  tree::Stm* view_shift_;
+  tree::Stm *view_shift_;
   int s_offset;
 
   // TODO: perhaps need to supply
