@@ -43,15 +43,22 @@ public:
       : frame_(frame), traces_(std::move(traces)) {}
 
   void Codegen();
+  // add these two function
+  void SaveCalleeSaved(assem::InstrList &instr_list, std::string_view fs);
+  void RestoreCalleeSaved(assem::InstrList &instr_list, std::string_view fs);
   std::unique_ptr<AssemInstr> TransferAssemInstr() {
     return std::move(assem_instr_);
   }
+
+
 
 private:
   frame::Frame *frame_;
   std::string fs_; // Frame size label_
   std::unique_ptr<canon::Traces> traces_;
   std::unique_ptr<AssemInstr> assem_instr_;
+  // map bewteen callee saved register and its tmp-saved register
+  std::vector<temp::Temp*> tmp_save_regs;
 };
 
 } // namespace cg

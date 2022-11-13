@@ -85,8 +85,9 @@ void ProcFrag::OutputAssem(FILE *out, OutputPhase phase, bool need_ra) const {
 //     color = temp::Map::LayerMap(reg_manager->temp_map_, allocation->coloring_);
 //   }
 
+  ///@note change for me
   TigerLog("-------====Output assembly for %s=====-----\n",
-           frame_->name_->Name().data());
+           frame_->label_->Name().data());  
 
   assem::Proc *proc = frame::ProcEntryExit3(frame_, il);
   

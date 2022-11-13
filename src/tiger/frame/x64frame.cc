@@ -151,6 +151,7 @@ temp::TempList *X64RegManager::CalleeSaves() {
 
 
 temp::TempList *X64RegManager::ReturnSink() {
+  // return value, stack pointer and all callee-saved register
   temp::TempList *result = CalleeSaves();
   result->Append(StackPointer());
   result->Append(ReturnValue());
@@ -177,6 +178,13 @@ temp::Temp *X64RegManager::ReturnValue() {
   return regs_[0];
 }
 
+
+temp::Temp *X64RegManager::NthRegister(int n) {
+  assert(n >= 0);
+  assert(n < regs_.size());
+
+  return regs_[n];
+}
 
 /* TODO: Put your lab5 code here */
 X64Frame::X64Frame(temp::Label *name, std::list<bool> formals){
@@ -236,24 +244,43 @@ Access* X64Frame::AllocLocal(bool escape) {
   return access;
 }
 
+
+std::string X64Frame::GetLabel() {
+  return label_->Name();
+}
+
 tree::Stm* ProcEntryExit1(Frame *frame, tree::Stm *stm) {
   return new tree::SeqStm(frame->view_shift_, stm);
 }
 
 
 assem::InstrList* ProcEntryExit2(assem::InstrList* body) {
-  tree::TempExp *temp = nullptr;
-  // TODO: maybe need to change to return sink
-  if(!temp) {
-    temp = new tree::TempExp(reg_manager->ReturnValue());
+  static temp::TempList *sink_list = nullptr;
+  if(!sink_list) {
+    sink_list = reg_manager->ReturnSink();
   }
+  body->Append(new assem::OperInstr("", nullptr, sink_list, nullptr));
   return body;
 }
 
 
-// TODO: need to implement in next lab
-assem::Proc* procEntryExit3(frame::Frame* frame, assem::InstrList* body) {
-  return nullptr;
+// TODO: maybe need to supply
+assem::Proc* ProcEntryExit3(frame::Frame* frame, assem::InstrList* body) {
+  std::string prologue, epilogue;
+
+  // prologue
+  // ".set xx_framesize, size", e.g., ".set tigermain_framesize, 8"
+  prologue = ".set " + frame->label_->Name() + "_framesize, " + std::to_string(-frame->s_offset) + "\n";
+  // the function label, e.g., "tigermain"
+  prologue += frame->label_->Name() + "\n";
+  // stack pointer shift, e.g., "subq $0x8, %rsp";
+  prologue += "subq $" + std::to_string(-frame->s_offset) + ", %rsp\n";
+
+  // epilogue
+  epilogue = "addq $" + std::to_string(-frame->s_offset) + ", %rsp\n";
+  epilogue += "retq\n";
+
+  return new assem::Proc(prologue, body, epilogue);
 }
 
 

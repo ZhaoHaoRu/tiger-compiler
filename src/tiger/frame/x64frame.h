@@ -36,6 +36,8 @@ public:
   [[nodiscard]] temp::Temp *StackPointer() override;
 
   [[nodiscard]] temp::Temp *ReturnValue() override;
+
+  [[nodiscard]] temp::Temp *NthRegister(int n) override;
 };
 
 
@@ -48,6 +50,8 @@ public:
   void newFrame(std::list<bool> formals) override;
 
   Access* AllocLocal(bool escape) override;
+
+  std::string GetLabel() override;
 };
 
 

@@ -5,6 +5,7 @@
 #include <memory>
 // TODO: add this lib
 #include <vector>
+#include <cassert>
 #include <string>
 
 #include "tiger/frame/temp.h"
@@ -65,6 +66,11 @@ public:
 
   [[nodiscard]] virtual temp::Temp *ReturnValue() = 0;
 
+  /**
+   * add this
+   */ 
+  [[nodiscard]] virtual temp::Temp *NthRegister(int n) = 0;
+
   temp::Map *temp_map_;
 protected:
   std::vector<temp::Temp *> regs_;
@@ -97,7 +103,7 @@ public:
   ///@brief for view shift
   virtual void newFrame(std::list<bool> formals) = 0;
   virtual Access* AllocLocal(bool escape) = 0;
-
+  virtual std::string GetLabel() = 0;
 };
 
 /**
@@ -157,7 +163,7 @@ private:
 tree::Exp* ExternalCall(std::string s, tree::ExpList* args);
 tree::Stm* ProcEntryExit1(Frame *frame, tree::Stm *stm);
 assem::InstrList* ProcEntryExit2(assem::InstrList* body);
-assem::Proc* procEntryExit3(frame::Frame* frame, assem::InstrList* body);
+assem::Proc* ProcEntryExit3(frame::Frame* frame, assem::InstrList* body);
 } // namespace frame
 
 #endif
