@@ -139,11 +139,13 @@ void ProgTr::Translate() {
   FillBaseTEnv();
   FillBaseVEnv();
 
+
   temp::Label *new_label = temp::LabelFactory::NewLabel();
   tr::ExpAndTy *result = absyn_tree_->Translate(venv_.get(), tenv_.get(), 
                           main_level_.get(), main_level_->frame_->label_, errormsg_.get());
 
-  // TODO: maybe not need to save
+  // TODO:  need to save
+  frags->PushBack(new frame::ProcFrag(result->exp_->UnNx(), main_level_->frame_));
 }
 
 } // namespace tr
@@ -305,7 +307,12 @@ tr::ExpAndTy *CallExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   tree::Exp *static_link = StaticLink(level, fun_entry->level_->parent_);
 
   auto exp_list = new tree::ExpList();
-  exp_list->Append(static_link);
+
+  // to avoid segmentation fault
+  if(static_link) {
+    exp_list->Append(static_link);
+  }
+  
 
   // translate the arguments
   std::list<absyn::Exp*> raw_arg_list = args_->GetList();
@@ -361,7 +368,7 @@ tr::ExpAndTy *OpExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   tr::ExpAndTy *r_ret = right_->Translate(venv, tenv, level, label, errormsg);
   tr::Exp *exp;
   tree::CjumpStm *stm;
-  tr::PatchList trues, falses;
+  tr::PatchList *trues = new tr::PatchList(), *falses = new tr::PatchList();
 
   switch(oper_) {
     case absyn::PLUS_OP:
@@ -407,37 +414,37 @@ tr::ExpAndTy *OpExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
         else
           stm = new tree::CjumpStm(tree::NE_OP, l_ret->exp_->UnEx(), r_ret->exp_->UnEx(), nullptr, nullptr);
       }
-      trues.AddPatch(stm->true_label_);
-      falses.AddPatch(stm->false_label_);
-      exp = new tr::CxExp(trues, falses, stm);
+      trues->AddPatch(&stm->true_label_);
+      falses->AddPatch(&stm->false_label_);
+      exp = new tr::CxExp(*trues, *falses, stm);
       break;
     case absyn::LT_OP:
       CheckCjump(pos_, l_ret, r_ret, errormsg);
       stm = new tree::CjumpStm(tree::LT_OP, l_ret->exp_->UnEx(), r_ret->exp_->UnEx(), nullptr, nullptr);
-      trues.DoPatch(stm->true_label_);
-      falses.DoPatch(stm->false_label_);
-      exp = new tr::CxExp(trues, falses, stm);
+      trues->AddPatch(&stm->true_label_);
+      falses->AddPatch(&stm->false_label_);
+      exp = new tr::CxExp(*trues, *falses, stm);
       break;
     case absyn::LE_OP:
       CheckCjump(pos_, l_ret, r_ret, errormsg);
       stm = new tree::CjumpStm(tree::LE_OP, l_ret->exp_->UnEx(), r_ret->exp_->UnEx(), nullptr, nullptr);
-      trues.DoPatch(stm->true_label_);
-      falses.DoPatch(stm->false_label_);
-      exp = new tr::CxExp(trues, falses, stm);
+      trues->AddPatch(&stm->true_label_);
+      falses->AddPatch(&stm->false_label_);
+      exp = new tr::CxExp(*trues, *falses, stm);
       break;
     case absyn::GT_OP:
       CheckCjump(pos_, l_ret, r_ret, errormsg);
       stm = new tree::CjumpStm(tree::GT_OP, l_ret->exp_->UnEx(), r_ret->exp_->UnEx(), nullptr, nullptr);
-      trues.DoPatch(stm->true_label_);
-      falses.DoPatch(stm->false_label_);
-      exp = new tr::CxExp(trues, falses, stm);
+      trues->AddPatch(&stm->true_label_);
+      falses->AddPatch(&stm->false_label_);
+      exp = new tr::CxExp(*trues, *falses, stm);
       break;
     case absyn::GE_OP:
       CheckCjump(pos_, l_ret, r_ret, errormsg);
       stm = new tree::CjumpStm(tree::GE_OP, l_ret->exp_->UnEx(), r_ret->exp_->UnEx(), nullptr, nullptr);
-      trues.DoPatch(stm->true_label_);
-      falses.DoPatch(stm->false_label_);
-      exp = new tr::CxExp(trues, falses, stm);
+      trues->AddPatch(&stm->true_label_);
+      falses->AddPatch(&stm->false_label_);
+      exp = new tr::CxExp(*trues, *falses, stm);
       break;
     default:
       errormsg->Error(pos_, "unknown op type\n");
@@ -772,7 +779,8 @@ tr::ExpAndTy *LetExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   stm = new tree::ExpStm(exp);
 
   if(is_main) {
-    frags->PushBack(new frame::ProcFrag(stm, level->frame_));
+    printf("get line 780!\n");
+    // frags->PushBack(new frame::ProcFrag(stm, level->frame_));
   }
 
   return new tr::ExpAndTy(new tr::ExExp(exp), body_info->ty_->ActualTy());

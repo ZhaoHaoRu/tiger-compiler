@@ -72,8 +72,17 @@ void CodeGen::RestoreCalleeSaved(assem::InstrList &instr_list, std::string_view 
 }
 
 void AssemInstr::Print(FILE *out, temp::Map *map) const {
-  for (auto instr : instr_list_->GetList())
+  for (auto instr : instr_list_->GetList()){
+    // TODO: add this for debug
+    assert(instr != nullptr);
+
+    // std::string assem_sentence = instr->GetAssem(); 
+    // if(assem_sentence == "addq t130, t131") {
+    //   int debug = 1;
+    // } 
+
     instr->Print(out, map);
+  }
   fprintf(out, "\n");
 }
 } // namespace cg
@@ -97,7 +106,7 @@ void JumpStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
   /* TODO: Put your lab5 code here */
   std::string jump_label = exp_->name_->Name();
   assem::Targets *jump_target = new assem::Targets(jumps_);
-  std::string assem = "jmp " + jump_label;
+  std::string assem = "jmp `j0";
   
   instr_list.Append(new assem::OperInstr(assem, nullptr, nullptr, jump_target));
 }
@@ -213,7 +222,7 @@ void MoveStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
       assem = "movq (`s0), d0";
       instr_list.Append(new assem::OperInstr(assem, new temp::TempList({new_reg}), new temp::TempList({src_reg}), nullptr));
 
-      assem = "movq d0, (`s1)";
+      assem = "movq s1, (`s0)";
       instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({dst_reg, new_reg}), nullptr));
     
     } else {
@@ -223,7 +232,7 @@ void MoveStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
       auto src_reg = e2->Munch(instr_list, fs);
 
       assem = "movq `s0, (`s1)";
-      instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({dst_reg, src_reg}), nullptr));
+      instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({src_reg, dst_reg}), nullptr));
     }
 
   } else if (typeid(*dst_) == typeid(TempExp)) {
@@ -232,7 +241,7 @@ void MoveStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
     /*MOVE(TEMP~i, e2) */
     auto src_reg = e2->Munch(instr_list, fs);
     assem = "movq `s0, `d0";
-    instr_list.Append(new assem::OperInstr(assem, new temp::TempList({dst_temp}), new temp::TempList({src_reg}), nullptr));
+    instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({dst_temp}), new temp::TempList({src_reg})));
   }
 }
 
@@ -251,7 +260,7 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
   std::string assem;
 
   assem = "movq `s0, `d0";
-  instr_list.Append(new assem::OperInstr(assem, new temp::TempList({res_reg}), new temp::TempList({left_reg}), nullptr));
+  instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({res_reg}), new temp::TempList({left_reg})));
 
   switch (op_)
   {
@@ -266,18 +275,18 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
   case tree::MUL_OP:
     // move the left value to %rax
     assem = "movq `s0, `d0";
-    instr_list.Append(new assem::OperInstr(assem, new temp::TempList({reg_manager->NthRegister(0)}), new temp::TempList({left_reg}), nullptr));
+    instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({reg_manager->NthRegister(0)}), new temp::TempList({res_reg})));
     // multiply the right value, save in %rax, %rbx
     assem = "imulq `s0";
     instr_list.Append(new assem::OperInstr(assem, new temp::TempList({reg_manager->NthRegister(0), reg_manager->NthRegister(3)}), new temp::TempList({right_reg}), nullptr));
     // move the result to res_reg
     assem = "movq `s0, `d0";
-    instr_list.Append(new assem::OperInstr(assem, new temp::TempList({res_reg}), new temp::TempList({reg_manager->NthRegister(0)}), nullptr));
+    instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({res_reg}), new temp::TempList({reg_manager->NthRegister(0)})));
     break;
   case tree::DIV_OP:
     // move the left value to %rax
     assem = "movq `s0, `d0";
-    instr_list.Append(new assem::OperInstr(assem, new temp::TempList({reg_manager->NthRegister(0)}), new temp::TempList({left_reg}), nullptr));
+    instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({reg_manager->NthRegister(0)}), new temp::TempList({res_reg})));
     // sign extend
     assem = "cqto";
     instr_list.Append(new assem::OperInstr(assem, new temp::TempList({reg_manager->NthRegister(0), reg_manager->NthRegister(3)}), new temp::TempList({reg_manager->NthRegister(0)}), nullptr));
@@ -286,13 +295,15 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
     instr_list.Append(new assem::OperInstr(assem, new temp::TempList({reg_manager->NthRegister(0), reg_manager->NthRegister(3)}), new temp::TempList({right_reg}), nullptr));
     // move the result to res_reg
     assem = "movq `s0, `d0";
-    instr_list.Append(new assem::OperInstr(assem, new temp::TempList({res_reg}), new temp::TempList({reg_manager->NthRegister(0)}), nullptr));
+    instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({res_reg}), new temp::TempList({reg_manager->NthRegister(0)})));
     break;
   default:
     // is illegal
     assert(0);
     break;
   }
+
+  return res_reg;
 }
 
 temp::Temp *MemExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
@@ -366,7 +377,7 @@ temp::Temp *CallExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
 
   // move the function return value to res_reg
   assem = "movq `s0, `d0";
-  instr_list.Append(new assem::OperInstr(assem, new temp::TempList({res_reg}), new temp::TempList({reg_manager->ReturnValue()}), nullptr));
+  instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({res_reg}), new temp::TempList({reg_manager->ReturnValue()})));
 
   return res_reg;
 }
@@ -390,7 +401,10 @@ temp::TempList *ExpList::MunchArgs(assem::InstrList &instr_list, std::string_vie
     if(i < arg_reg_size) {
       // move the argument to specific register 
       assem = "movq `s0, `d0";
-      instr_list.Append(new assem::OperInstr(assem, new temp::TempList({*it}), new temp::TempList({ret_reg}), nullptr));
+      // TODO: for debug
+      // printf("the ret_reg value: %d\n", ret_reg->Int());
+
+      instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({*it}), new temp::TempList({ret_reg})));
 
       // add to the result list
       res_list->Append(*it);

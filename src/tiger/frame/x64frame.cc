@@ -26,69 +26,69 @@ X64RegManager::X64RegManager():RegManager() {
   temp::Temp *r15 = temp::TempFactory::NewTemp();
 
   // add the register to temp map and reg
-  std::string reg_name = "%rax";
+  std::string *rax_name = new std::string("%rax");
   regs_.emplace_back(rax);
-  temp_map_->Enter(rax, &reg_name);
+  temp_map_->Enter(rax, rax_name);
 
   regs_.emplace_back(rbx);
-  reg_name = "%rbx";
-  temp_map_->Enter(rbx, &reg_name);
+  std::string *rbx_name = new std::string("%rbx");
+  temp_map_->Enter(rbx, rbx_name);
 
   regs_.emplace_back(rcx);
-  reg_name = "%rcx";
-  temp_map_->Enter(rcx, &reg_name);
+  std::string *rcx_name = new std::string("%rcx");
+  temp_map_->Enter(rcx, rcx_name);
 
   regs_.emplace_back(rdx);
-  reg_name = "%rdx";
-  temp_map_->Enter(rdx, &reg_name);
+  std::string *rdx_name = new std::string("%rdx");
+  temp_map_->Enter(rdx, rdx_name);
 
   regs_.emplace_back(rsi);
-  reg_name = "%rsi";
-  temp_map_->Enter(rsi, &reg_name);
+  std::string *rsi_name = new std::string("%rsi");
+  temp_map_->Enter(rsi, rsi_name);
 
   regs_.emplace_back(rdi);
-  reg_name = "%rdi";
-  temp_map_->Enter(rdi, &reg_name);
+  std::string *rdi_name = new std::string("%rdi");
+  temp_map_->Enter(rdi, rdi_name);
 
   regs_.emplace_back(rbp);
-  reg_name = "%rbp";
-  temp_map_->Enter(rbp, &reg_name);
+  std::string *rbp_name = new std::string("%rbp");
+  temp_map_->Enter(rbp, rbp_name);
 
   regs_.emplace_back(rsp);
-  reg_name = "%rsp";
-  temp_map_->Enter(rsp, &reg_name);
+  std::string *rsp_name = new std::string("%rsp");
+  temp_map_->Enter(rsp, rsp_name);
 
   regs_.emplace_back(r8);
-  reg_name = "%r8";
-  temp_map_->Enter(r8, &reg_name);
+  std::string *r8_name = new std::string("%r8");
+  temp_map_->Enter(r8, r8_name);
 
   regs_.emplace_back(r9);
-  reg_name = "%r9";
-  temp_map_->Enter(r9, &reg_name);
+  std::string *r9_name = new std::string("%r9");
+  temp_map_->Enter(r9, r9_name);
 
   regs_.emplace_back(r10);
-  reg_name = "%r10";
-  temp_map_->Enter(r10, &reg_name);
+  std::string *r10_name = new std::string("%r10");
+  temp_map_->Enter(r10, r10_name);
 
   regs_.emplace_back(r11);
-  reg_name = "%r11";
-  temp_map_->Enter(r11, &reg_name);
+  std::string *r11_name = new std::string("%r11");
+  temp_map_->Enter(r11, r11_name);
 
   regs_.emplace_back(r12);
-  reg_name = "%r12";
-  temp_map_->Enter(r12, &reg_name);
+  std::string *r12_name = new std::string("%r12");
+  temp_map_->Enter(r12, r12_name);
 
   regs_.emplace_back(r13);
-  reg_name = "%r13";
-  temp_map_->Enter(r13, &reg_name);
+  std::string *r13_name = new std::string("%r13");
+  temp_map_->Enter(r13, r13_name);
 
   regs_.emplace_back(r14);
-  reg_name = "%r14";
-  temp_map_->Enter(r14, &reg_name);
+  std::string *r14_name = new std::string("%r14");
+  temp_map_->Enter(r14, r14_name);
 
   regs_.emplace_back(r15);
-  reg_name = "%r15";
-  temp_map_->Enter(r15, &reg_name);
+  std::string *r15_name = new std::string("%r15");
+  temp_map_->Enter(r15, r15_name);
 }
 
 
@@ -271,8 +271,8 @@ assem::Proc* ProcEntryExit3(frame::Frame* frame, assem::InstrList* body) {
   // prologue
   // ".set xx_framesize, size", e.g., ".set tigermain_framesize, 8"
   prologue = ".set " + frame->label_->Name() + "_framesize, " + std::to_string(-frame->s_offset) + "\n";
-  // the function label, e.g., "tigermain"
-  prologue += frame->label_->Name() + "\n";
+  // the function label, e.g., "tigermain:"
+  prologue += frame->label_->Name() + ":\n";
   // stack pointer shift, e.g., "subq $0x8, %rsp";
   prologue += "subq $" + std::to_string(-frame->s_offset) + ", %rsp\n";
 

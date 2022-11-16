@@ -25,8 +25,8 @@ public:
     for(auto &patch : patch_list_) *patch = label;
   }
 
-  void AddPatch(temp::Label *label) {
-    patch_list_.emplace_back(&label);
+  void AddPatch(temp::Label **label) {
+    patch_list_.emplace_back(label);
   }
 
   static PatchList JoinPatch(const PatchList &first, const PatchList &second) {
