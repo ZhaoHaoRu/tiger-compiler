@@ -25,6 +25,10 @@ public:
     for(auto &patch : patch_list_) *patch = label;
   }
 
+  void DoPatch2(temp::Label **label) {
+    for(auto &patch : patch_list_) patch = label;
+  }
+
   void AddPatch(temp::Label **label) {
     patch_list_.emplace_back(label);
   }

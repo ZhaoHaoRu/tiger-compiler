@@ -120,7 +120,7 @@ void CjumpStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
   temp::TempList *src_list = new temp::TempList();
   src_list->Append(left_temp);
   src_list->Append(right_temp);
-  std::string assem = "cmpq `s0, `s1";
+  std::string assem = "cmpq `s1, `s0";
 
   // add the first compare instruction
   instr_list.Append(new assem::OperInstr(assem, nullptr, src_list, nullptr));
@@ -195,7 +195,7 @@ void MoveStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
         const_val_str = std::to_string(static_cast<tree::ConstExp*>(dst_binop->right_)->consti_);
         assem = "movq `s0, " + const_val_str + "(`s1)";
 
-        instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({dst_reg, src_reg}), nullptr));
+        instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({src_reg, dst_reg}), nullptr));
       
       }else if(dst_binop->op_== PLUS_OP && typeid(*dst_binop->left_) == typeid(ConstExp)) {
         Exp *e1 = dst_binop->right_; 
@@ -207,7 +207,7 @@ void MoveStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
         const_val_str = std::to_string(static_cast<tree::ConstExp*>(dst_binop->left_)->consti_);
         assem = "movq `s0, " + const_val_str + "(`s1)";
 
-        instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({dst_reg, src_reg}), nullptr));
+        instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({src_reg, dst_reg}), nullptr));
       }
     } else if(typeid(*src_) == typeid(MemExp)) {
       MemExp *src_mem = static_cast<MemExp*>(src_);
@@ -312,7 +312,7 @@ temp::Temp *MemExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
   temp::Temp *res_reg = temp::TempFactory::NewTemp();
   temp::Temp *src_reg = exp_->Munch(instr_list, fs);
 
-  std::string assem = "movq (`s0), d0";
+  std::string assem = "movq (`s0), `d0";
   instr_list.Append(new assem::OperInstr(assem, new temp::TempList({res_reg}), new temp::TempList({src_reg}), nullptr));
   return res_reg;
 }
@@ -326,9 +326,9 @@ temp::Temp *TempExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
   // register for saving the reuslt
   temp::Temp *res_reg = temp::TempFactory::NewTemp();
   // fs: the frame size??
-  std::string assem = "leaq " + std::string(fs) + "(`s0), d0";
+  std::string assem = "leaq " + std::string(fs) + "(`s0), `d0";
 
-  instr_list.Append(new assem::OperInstr(assem, new temp::TempList({res_reg}), new temp::TempList({reg_manager->FramePointer()}), nullptr));
+  instr_list.Append(new assem::OperInstr(assem, new temp::TempList({res_reg}), new temp::TempList({reg_manager->StackPointer()}), nullptr));
   return res_reg; 
 }
 
@@ -354,7 +354,7 @@ temp::Temp *ConstExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
   temp::Temp *res_reg = temp::TempFactory::NewTemp();
 
   // move the const value to register
-  std::string assem = "movq " + std::to_string(consti_) + ", `d0";
+  std::string assem = "movq $" + std::to_string(consti_) + ", `d0";
   instr_list.Append(new assem::OperInstr(assem, new temp::TempList({res_reg}), nullptr, nullptr));
   return res_reg;
 }
@@ -402,21 +402,21 @@ temp::TempList *ExpList::MunchArgs(assem::InstrList &instr_list, std::string_vie
       // move the argument to specific register 
       assem = "movq `s0, `d0";
       // TODO: for debug
-      // printf("the ret_reg value: %d\n", ret_reg->Int());
+      printf("the ret_reg value: %d\n", ret_reg->Int());
 
       instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({*it}), new temp::TempList({ret_reg})));
 
       // add to the result list
       res_list->Append(*it);
-      ++i;
       ++it;
 
     } else {
       // move the argument to stack
-      int offset = word_size * (i - arg_reg_size) * word_size;
+      int offset = (i - arg_reg_size) * word_size;
       assem = "movq `s0, " + std::to_string(offset) + "(`s1)";
       instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({ret_reg, reg_manager->StackPointer()}), nullptr));
     }
+    ++i;
   } 
 }
 

@@ -60,7 +60,9 @@ public:
   }
   [[nodiscard]] Cx UnCx(err::ErrorMsg *errormsg) override {
     /* TODO: Put your lab5 code here */
-    tree::CjumpStm *cjump_stm = new tree::CjumpStm(tree::NE_OP, exp_, new tree::ConstExp(0), nullptr, nullptr);
+    temp::Label *t = temp::LabelFactory::NewLabel();
+    temp::Label *f = temp::LabelFactory::NewLabel();
+    tree::CjumpStm *cjump_stm = new tree::CjumpStm(tree::NE_OP, exp_, new tree::ConstExp(0), t, f);
     tr::PatchList trues(std::list<temp::Label **>{&cjump_stm->true_label_}), falses(std::list<temp::Label **>{&cjump_stm->false_label_});
     Cx new_cx(trues, falses, cjump_stm);
     return new_cx;
@@ -105,11 +107,14 @@ public:
     temp::Label *t = temp::LabelFactory::NewLabel();
     temp::Label *f = temp::LabelFactory::NewLabel();
 
-    tr::PatchList true_list(std::list<temp::Label **>{&t});
-    tr::PatchList false_list(std::list<temp::Label **>{&f});
+    // tr::PatchList true_list(std::list<temp::Label **>{&t});
+    // tr::PatchList false_list(std::list<temp::Label **>{&f});
 
-    PatchList::JoinPatch(cx_.trues_, true_list);
-    PatchList::JoinPatch(cx_.falses_, false_list);
+    cx_.trues_.DoPatch(t);
+    cx_.falses_.DoPatch(f);
+
+    // PatchList::JoinPatch(cx_.trues_, true_list);
+    // PatchList::JoinPatch(cx_.falses_, false_list);
 
     return new tree::EseqExp(
       new tree::MoveStm(
@@ -155,12 +160,16 @@ namespace absyn {
 tree::Exp *StaticLink(tr::Level *current, tr::Level *target) {
   tree::Exp *static_link = new tree::TempExp(reg_manager->FramePointer());
 
-  while(current != target) {
-    if(current == nullptr || !current->parent_) {
-      return nullptr;
-    }
+  if(!current || !current->parent_) {
+    return nullptr;
+  }
+
+  while(current && target && current->frame_->label_->Name() != target->frame_->label_->Name()) {
     static_link = (*current->frame_->formals_.begin())->ToExp(static_link);
     current = current->parent_;
+    if(!current || !current->parent_) {
+      return nullptr;
+    }
   }
 
   return static_link;
@@ -217,6 +226,7 @@ tr::ExpAndTy *FieldVar::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
       tr::Exp *exp = new tr::ExExp(new tree::MemExp(raw_exp));
       return new tr::ExpAndTy(exp, field->ty_->ActualTy());
     }
+    ++i;
   }
 
   errormsg->Error(pos_, "in field var, cannot find the field want\n");
@@ -304,6 +314,7 @@ tr::ExpAndTy *CallExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   env::FunEntry *fun_entry = static_cast<env::FunEntry*>(entry);
 
   // get the static link
+  printf("the function name: %s\n", func_->Name().c_str());
   tree::Exp *static_link = StaticLink(level, fun_entry->level_->parent_);
 
   auto exp_list = new tree::ExpList();
@@ -311,7 +322,7 @@ tr::ExpAndTy *CallExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   // to avoid segmentation fault
   if(static_link) {
     exp_list->Append(static_link);
-  }
+  } 
   
 
   // translate the arguments
@@ -408,15 +419,18 @@ tr::ExpAndTy *OpExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
           stm = new tree::CjumpStm(tree::EQ_OP, ret, new tree::ConstExp(1), nullptr, nullptr);
         else
           stm = new tree::CjumpStm(tree::NE_OP, ret, new tree::ConstExp(1), nullptr, nullptr);
+        trues->AddPatch(&stm->true_label_);
+        falses->AddPatch(&stm->false_label_);
+        exp = new tr::CxExp(*trues, *falses, stm);
       } else {
         if(oper_ == absyn::EQ_OP)
           stm = new tree::CjumpStm(tree::EQ_OP, l_ret->exp_->UnEx(), r_ret->exp_->UnEx(), nullptr, nullptr);
         else
           stm = new tree::CjumpStm(tree::NE_OP, l_ret->exp_->UnEx(), r_ret->exp_->UnEx(), nullptr, nullptr);
+        trues->AddPatch(&stm->true_label_);
+        falses->AddPatch(&stm->false_label_);
+        exp = new tr::CxExp(*trues, *falses, stm);
       }
-      trues->AddPatch(&stm->true_label_);
-      falses->AddPatch(&stm->false_label_);
-      exp = new tr::CxExp(*trues, *falses, stm);
       break;
     case absyn::LT_OP:
       CheckCjump(pos_, l_ret, r_ret, errormsg);
@@ -611,9 +625,13 @@ tr::ExpAndTy *WhileExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                                   tr::Level *level, temp::Label *label,            
                                   err::ErrorMsg *errormsg) const {
   /* TODO: Put your lab5 code here */
+  temp::Label *done = temp::LabelFactory::NewLabel();
+  temp::Label *body = temp::LabelFactory::NewLabel();
+  temp::Label *test = temp::LabelFactory::NewLabel();
+
   tr::ExpAndTy *test_info = nullptr, *body_info = nullptr;
   test_info = test_->Translate(venv, tenv, level, label, errormsg);
-  body_info = body_->Translate(venv, tenv, level, label, errormsg);
+  body_info = body_->Translate(venv, tenv, level, done, errormsg);
 
   // type checking 
   if(typeid(*test_info->ty_) != typeid(type::IntTy)){
@@ -624,10 +642,6 @@ tr::ExpAndTy *WhileExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
     errormsg->Error(pos_, "while body must produce no value");
     return new tr::ExpAndTy(nullptr, type::VoidTy::Instance());
   }
-
-  temp::Label *done = temp::LabelFactory::NewLabel();
-  temp::Label *body = temp::LabelFactory::NewLabel();
-  temp::Label *test = temp::LabelFactory::NewLabel();
 
   tr::Exp *exp;
   tr::Cx test_cx = test_info->exp_->UnCx(errormsg);
@@ -676,13 +690,13 @@ tr::ExpAndTy *ForExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   env::EnvEntry *new_var_entry = new env::VarEntry(access, lo_info->ty_, true);
   venv->Enter(var_, new_var_entry);
 
-  // translate the body
-  tr::ExpAndTy *body_info = body_->Translate(venv, tenv, level, label, errormsg);
-
   // new labels
   temp::Label *done = temp::LabelFactory::NewLabel();
   temp::Label *body = temp::LabelFactory::NewLabel();
   temp::Label *incr = temp::LabelFactory::NewLabel();
+
+  // translate the body
+  tr::ExpAndTy *body_info = body_->Translate(venv, tenv, level, done, errormsg);
 
   auto label_list = new std::vector<temp::Label*>();
   label_list->emplace_back(body);
@@ -778,11 +792,6 @@ tr::ExpAndTy *LetExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
 
   stm = new tree::ExpStm(exp);
 
-  if(is_main) {
-    printf("get line 780!\n");
-    // frags->PushBack(new frame::ProcFrag(stm, level->frame_));
-  }
-
   return new tr::ExpAndTy(new tr::ExExp(exp), body_info->ty_->ActualTy());
 }
 
@@ -864,6 +873,7 @@ tr::Exp *FunctionDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
     auto access_it = access_list.begin();
     if(type_list.size() < access_list.size()) {
       errormsg->Error(pos_, "has the static link\n");
+      printf("has static link!\n");
       ++access_it;
     }
 
@@ -877,7 +887,7 @@ tr::Exp *FunctionDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
     }
     
     // translate the body
-    tr::ExpAndTy *body_info = fun_dec->body_->Translate(venv, tenv, level, label, errormsg);
+    tr::ExpAndTy *body_info = fun_dec->body_->Translate(venv, tenv, func_entry->level_, label, errormsg);
     venv->EndScope();
 
     tree::Stm *stm = new tree::MoveStm(new tree::TempExp(reg_manager->ReturnValue()), body_info->exp_->UnEx());
@@ -915,8 +925,7 @@ tr::Exp *VarDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   venv->Enter(this->var_, new env::VarEntry(access, init_ty));
 
   // get the var
-  tree::Exp *fp = StaticLink(level, access->level_);
-  tr::Exp *dst_exp = new tr::ExExp(access->access_->ToExp(fp)); 
+  tr::Exp *dst_exp = new tr::ExExp(access->access_->ToExp(new tree::TempExp(reg_manager->FramePointer()))); 
 
   return new tr::NxExp(new tree::MoveStm(dst_exp->UnEx(), init_info->exp_->UnEx()));
 }

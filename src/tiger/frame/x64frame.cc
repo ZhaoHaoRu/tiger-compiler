@@ -213,23 +213,24 @@ void X64Frame::newFrame(std::list<bool> formals) {
   tree::Stm *stm;
 
   for(auto formal : formals_) {
-    dst = new tree::TempExp(reg_manager->FramePointer());
+    dst = formal->ToExp(new tree::TempExp(reg_manager->FramePointer()));
 
     if(nth < max_inreg) {
       src = new tree::TempExp(*it);
       ++it;
     } else {
-      src = new tree::BinopExp(tree::BinOp::PLUS_OP, new tree::TempExp(reg_manager->FramePointer()), new tree::ConstExp((nth - max_inreg + 1) * WORDSIZE));
+      src = new tree::MemExp(new tree::BinopExp(tree::BinOp::PLUS_OP, new tree::TempExp(reg_manager->FramePointer()), new tree::ConstExp((nth - max_inreg + 1) * WORDSIZE)));
     }
     ++nth;
+    stm = new tree::MoveStm(dst, src);
+
+    if(view_shift_ != nullptr) {
+      view_shift_ = new tree::SeqStm(view_shift_, stm);
+    } else {
+      view_shift_ = stm;
+    }
   }
 
-  stm = new tree::MoveStm(dst, src);
-  if(view_shift_ != nullptr) {
-    view_shift_ = new tree::SeqStm(view_shift_, stm);
-  } else {
-    view_shift_ = stm;
-  }
 }
 
 

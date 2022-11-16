@@ -63,7 +63,8 @@ public:
 
   /* TODO: Put your lab5 code here */
   tree::Exp *ToExp(tree::Exp *frame_ptr) const override {
-    return new tree::BinopExp(tree::BinOp::PLUS_OP, frame_ptr, new tree::ConstExp(offset));
+    tree::Exp *addr = new tree::BinopExp(tree::BinOp::PLUS_OP, frame_ptr, new tree::ConstExp(offset));
+    return new tree::MemExp(addr);
   }
 };
 
