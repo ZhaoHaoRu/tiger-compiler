@@ -264,7 +264,7 @@ type::Ty *AssignExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
     return type::IntTy::Instance();
   }
 
-  return left_ty;
+  return type::VoidTy::Instance();
 }
 
 type::Ty *IfExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
@@ -335,9 +335,9 @@ type::Ty *ForExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
 
   // verify the Id is constant
   env::EnvEntry *entry = venv->Look(var_);
-  if(!(entry && entry->readonly_)) {
-    errormsg->Error(pos_, "loop variable can't be assigned");
-  } 
+  // if(!(entry && entry->readonly_)) {
+  //   errormsg->Error(pos_, "loop variable can't be assigned");
+  // } 
 
   venv->BeginScope();
   tenv->BeginScope();

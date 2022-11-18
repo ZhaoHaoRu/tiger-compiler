@@ -411,6 +411,11 @@ tr::ExpAndTy *OpExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
       CheckCjump(pos_, l_ret, r_ret, errormsg);
       if(typeid(*l_ret->ty_->ActualTy()) == typeid(type::StringTy) && typeid(*r_ret->ty_->ActualTy()) == typeid(type::StringTy)) {
         auto exp_list = new tree::ExpList();
+
+        // for consistency
+        auto static_link = StaticLink(level, level);
+        exp_list->Append(static_link);
+
         exp_list->Append(l_ret->exp_->UnEx());
         exp_list->Append(r_ret->exp_->UnEx());
         auto ret = frame::ExternalCall("string_equal", exp_list);
@@ -498,6 +503,10 @@ tr::ExpAndTy *RecordExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   // alloc a space to store the pointer
   temp::Temp *head = temp::TempFactory::NewTemp();
   auto args = new tree::ExpList();
+
+  // for consistency
+  auto static_link = StaticLink(level, level);
+  args->Append(static_link);
   args->Append(new tree::ConstExp(reg_manager->WordSize() * field_list.size()));
   tree::Stm *stm = new tree::MoveStm(new tree::TempExp(head), frame::ExternalCall("alloc_record", args));
 
@@ -566,6 +575,7 @@ tr::ExpAndTy *AssignExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
 
   if(typeid(*var_info->ty_->ActualTy()) != typeid(*exp_info->ty_->ActualTy())) {
     errormsg->Error(pos_, "assign type mismatch\n");
+    printf("assign type mismatch\n");
     return new tr::ExpAndTy(nullptr, type::VoidTy::Instance());
   }
 
@@ -819,6 +829,10 @@ tr::ExpAndTy *ArrayExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   tr::ExpAndTy *init_info = init_->Translate(venv, tenv, level, label, errormsg);
 
   auto args = new tree::ExpList();
+
+  // for consistency, add static link first
+  auto static_link = StaticLink(level, level);
+  args->Append(static_link);
   args->Append(size_info->exp_->UnEx());
   args->Append(init_info->exp_->UnEx());
   tree::Exp *exp = frame::ExternalCall("init_array", args);

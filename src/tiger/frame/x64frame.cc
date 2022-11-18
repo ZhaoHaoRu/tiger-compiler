@@ -191,7 +191,7 @@ X64Frame::X64Frame(temp::Label *name, std::list<bool> formals){
   // initialize
   view_shift_ = nullptr;
   label_ = name;
-  s_offset = -8;
+  s_offset = 0;
 
   // alloc register or in frame
   for(auto formal : formals) {
@@ -238,8 +238,8 @@ void X64Frame::newFrame(std::list<bool> formals) {
 Access* X64Frame::AllocLocal(bool escape) {
   Access *access = nullptr;
   if(escape) {
-    access = new InFrameAccess(s_offset);
     s_offset -= WORDSIZE;
+    access = new InFrameAccess(s_offset);
   } else {
     access = new InRegAccess(temp::TempFactory::NewTemp());
   }

@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
       printf("get line 41\n");
       sem::ProgSem prog_sem(std::move(absyn_tree), std::move(errormsg));
       // TODO: don't consider type checking now 
-      // prog_sem.SemAnalyze();
+      prog_sem.SemAnalyze();
       absyn_tree = prog_sem.TransferAbsynTree();
       errormsg = prog_sem.TransferErrormsg();
     }
@@ -49,7 +49,6 @@ int main(int argc, char **argv) {
     {
       // Lab 5: escape analysis
       TigerLog("-------====Escape analysis=====-----\n");
-      printf("get line 52\n");
       esc::EscFinder esc_finder(std::move(absyn_tree));
       esc_finder.FindEscape();
       absyn_tree = esc_finder.TransferAbsynTree();
@@ -58,7 +57,6 @@ int main(int argc, char **argv) {
     {
       // Lab 5: translate IR tree
       TigerLog("-------====Translate=====-----\n");
-      printf("get line 61\n");
       tr::ProgTr prog_tr(std::move(absyn_tree), std::move(errormsg));
       prog_tr.Translate();
       errormsg = prog_tr.TransferErrormsg();
