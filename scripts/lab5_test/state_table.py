@@ -185,6 +185,8 @@ class StateTable(object):
         
         elif label == 'getchar':
             string = sys.stdin.read(1)
+            # TODO: add for debug
+            print("\nthe getchar result: ", ord(string[0]), " ", len(string), "\n")
             self._string_index = self._string_index + 1
             string_add = self._string_index * 8 + self._string_address
             self.store_mem(string_add, string)

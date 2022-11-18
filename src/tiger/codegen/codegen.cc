@@ -412,8 +412,8 @@ temp::Temp *CallExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
   // restore the stack pointer
   int word_size = reg_manager->WordSize();
   int offset = word_size;
-  if(raw_args.size() > 6) {
-    offset += (raw_args.size() - 6) * word_size;
+  if(args_->GetList().size() > 6) {
+    offset += (args_->GetList().size() - 6) * word_size;
   }
   assem = "addq $" + std::to_string(offset) + ", %rsp";
   instr_list.Append(new assem::OperInstr(assem, nullptr, nullptr, nullptr));
