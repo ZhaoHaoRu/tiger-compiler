@@ -104,8 +104,6 @@ temp::TempList *X64RegManager::Registers() {
   temp::TempList *result = new temp::TempList();
   std::list<temp::Temp *> dest_list = result->GetList();
   dest_list = initial_list;
-  // for debug
-  assert(result->GetList().size() == 15);
   return result;
 }
 

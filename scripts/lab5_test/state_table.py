@@ -185,8 +185,6 @@ class StateTable(object):
         
         elif label == 'getchar':
             string = sys.stdin.read(1)
-            # TODO: add for debug
-            print("\nthe getchar result: ", ord(string[0]), " ", len(string), "\n")
             self._string_index = self._string_index + 1
             string_add = self._string_index * 8 + self._string_address
             self.store_mem(string_add, string)
@@ -223,12 +221,9 @@ class StateTable(object):
             self._current_func = self._func_name_stack.pop()
 
     def get_mem_address(self, mem):
-        # TODO: add this for debug
-        # print("mem: ", mem)
         def get_number(num):
             return int(num) if num.find('0x') == -1 else int(num, 16)
         mem = mem.strip()
-        # print("after mem: ", mem)
         imm_index = mem.find('(%')
         imm_index = mem.find('(t') if imm_index == -1 else imm_index
         imm = 0
@@ -285,11 +280,8 @@ class StateTable(object):
                 return imm
                 
         else:
-            # TODO: add this for debug
             print("\nmem[:imm_index]:", mem, imm_index, mem[:imm_index], "end")
             return int(mem[:imm_index], 16) if mem.startswith('0x') else int(mem[:imm_index])
-            # print("the result:", int(mem[:]))
-            # return int(mem[:], 16) if mem.startswith('0x') else int(mem[:])
 
     def get_mem_table(self):
         return self._mem_table

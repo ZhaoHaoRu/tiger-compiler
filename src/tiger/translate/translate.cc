@@ -310,9 +310,6 @@ tr::ExpAndTy *CallExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
 
   env::FunEntry *fun_entry = static_cast<env::FunEntry*>(entry);
 
-  // get the static link
-  printf("the function name: %s\n", func_->Name().c_str());
-
   auto exp_list = new tree::ExpList();
 
   tree::Exp *static_link = StaticLink(level, fun_entry->level_->parent_);
@@ -575,7 +572,6 @@ tr::ExpAndTy *AssignExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
 
   if(typeid(*var_info->ty_->ActualTy()) != typeid(*exp_info->ty_->ActualTy())) {
     errormsg->Error(pos_, "assign type mismatch\n");
-    printf("assign type mismatch\n");
     return new tr::ExpAndTy(nullptr, type::VoidTy::Instance());
   }
 
@@ -622,18 +618,12 @@ tr::ExpAndTy *IfExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                             new tree::TempExp(r)))))))))  // return r
           );
   } else {
-    // TODO: add for debug
-    assert(test_cx.stm_);
-    assert(then_info->exp_->UnNx());
-    printf("get line 618!\n");
     exp = new tr::NxExp(
             new tree::SeqStm(test_cx.stm_,
               new tree::SeqStm(new tree::LabelStm(t),
                 new tree::SeqStm(then_info->exp_->UnNx(),
                   new tree::LabelStm(f))))
           );
-    // TODO: add for debug
-    printf("get line 625!\n");
   }
   return new tr::ExpAndTy(exp, then_info->ty_);
 }
@@ -672,7 +662,6 @@ tr::ExpAndTy *WhileExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   assert(test_cx.stm_);
   assert(body_info->exp_->UnNx());
 
-  printf("get line 664!\n");
   exp = new tr::NxExp(
           new tree::SeqStm(new tree::LabelStm(test),
             new tree::SeqStm(test_cx.stm_,
@@ -683,7 +672,6 @@ tr::ExpAndTy *WhileExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                     new tree::LabelStm(done))))))
         );
 
-  printf("get line 674!\n");
   return new tr::ExpAndTy(exp, type::VoidTy::Instance());
 }
 
@@ -739,14 +727,12 @@ tr::ExpAndTy *ForExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                               new tree::BinopExp(tree::PLUS_OP, i->UnEx(), new tree::ConstExp(1)));
   
   // test stm after the first time
-  printf("get line 731!\n");
   tree::Stm *test_stm = new tree::SeqStm(new tree::CjumpStm(tree::LT_OP, i->UnEx(), limit->UnEx(), incr, done),
                           new tree::SeqStm(new tree::LabelStm(incr),
                             new tree::SeqStm(increase_stm,
                               new tree::JumpStm(new tree::NameExp(body), label_list)))
                         );
   
-  printf("get line 738!\n");
   tree::Stm *stm = new tree::SeqStm(i_stm,
                     new tree::SeqStm(limit_stm,
                       new tree::SeqStm(first_test_stm,
@@ -755,7 +741,6 @@ tr::ExpAndTy *ForExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                             new tree::SeqStm(test_stm,
                               new tree::LabelStm(done))))))
                   );
-  printf("get line 747!\n");
   venv->EndScope();
 
   return new tr::ExpAndTy(new tr::NxExp(stm), type::VoidTy::Instance());
@@ -902,7 +887,6 @@ tr::Exp *FunctionDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
     auto access_it = access_list.begin();
     if(type_list.size() < access_list.size()) {
       errormsg->Error(pos_, "has the static link\n");
-      printf("has static link!\n");
       ++access_it;
     }
 

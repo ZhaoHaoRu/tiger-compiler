@@ -73,13 +73,7 @@ void CodeGen::RestoreCalleeSaved(assem::InstrList &instr_list, std::string_view 
 
 void AssemInstr::Print(FILE *out, temp::Map *map) const {
   for (auto instr : instr_list_->GetList()){
-    // TODO: add this for debug
     assert(instr != nullptr);
-
-    // std::string assem_sentence = instr->GetAssem(); 
-    // if(assem_sentence == "addq t130, t131") {
-    //   int debug = 1;
-    // } 
 
     instr->Print(out, map);
   }
@@ -270,6 +264,16 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
   temp::Temp *res_reg = temp::TempFactory::NewTemp();
   std::string assem;
 
+  // for AND and OR
+  temp::Label *t = temp::LabelFactory::NewLabel(); 
+  temp::Label *f = temp::LabelFactory::NewLabel(); 
+  auto true_label = new tree::LabelStm(t);
+  auto false_label = new tree::LabelStm(f);
+  std::vector<temp::Label *> *true_label_list = new std::vector<temp::Label *>{t};
+  std::vector<temp::Label *> *false_label_list = new std::vector<temp::Label *>{f};
+  assem::Targets *true_jump_target = new assem::Targets(true_label_list);
+  assem::Targets *false_jump_target = new assem::Targets(false_label_list);
+
   assem = "movq `s0, `d0";
   instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({res_reg}), new temp::TempList({left_reg})));
 
@@ -307,6 +311,42 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
     // move the result to res_reg
     assem = "movq `s0, `d0";
     instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({res_reg}), new temp::TempList({reg_manager->NthRegister(0)})));
+    break;
+  case tree::AND_OP:
+    assem = "cmpq $0, `s0";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({left_reg}), nullptr));
+    assem = "je `j0";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, nullptr, false_jump_target));
+    assem = "cmpq $0, `s0";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({right_reg}), nullptr));
+    assem = "je `j0";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, nullptr, false_jump_target));
+    assem = "movq $1, `s0";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({res_reg}), nullptr));
+    assem = "jmp `j0";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, nullptr, true_jump_target));
+    false_label->Munch(instr_list, fs);
+    assem = "movq $0, `s0";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({res_reg}), nullptr));
+    true_label->Munch(instr_list, fs);
+    break;
+  case tree::OR_OP:
+    assem = "cmpq $0, `s0";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({left_reg}), nullptr));
+    assem = "jne `j0";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, nullptr, true_jump_target));
+    assem = "cmpq $0, `s0";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({right_reg}), nullptr));
+    assem = "jne `j0";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, nullptr, true_jump_target));
+    assem = "movq $0, `s0";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({res_reg}), nullptr));
+    assem = "jmp `j0";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, nullptr, false_jump_target));
+    true_label->Munch(instr_list, fs);
+    assem = "movq $1, `s0";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({res_reg}), nullptr));
+    false_label->Munch(instr_list, fs);
     break;
   default:
     // is illegal
