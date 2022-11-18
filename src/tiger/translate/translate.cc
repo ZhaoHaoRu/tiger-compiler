@@ -160,16 +160,13 @@ namespace absyn {
 tree::Exp *StaticLink(tr::Level *current, tr::Level *target) {
   tree::Exp *static_link = new tree::TempExp(reg_manager->FramePointer());
 
-  if(!current || !current->parent_) {
-    return nullptr;
-  }
+  // if(!current || !current->parent_) {
+  //   return nullptr;
+  // }
 
-  while(current && target && current->frame_->label_->Name() != target->frame_->label_->Name()) {
-    static_link = (*current->frame_->formals_.begin())->ToExp(static_link);
+  while(current != target) {
+    static_link = new tree::MemExp(new tree::BinopExp(tree::PLUS_OP, static_link, new tree::ConstExp(reg_manager->WordSize())));
     current = current->parent_;
-    if(!current || !current->parent_) {
-      return nullptr;
-    }
   }
 
   return static_link;
@@ -315,14 +312,16 @@ tr::ExpAndTy *CallExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
 
   // get the static link
   printf("the function name: %s\n", func_->Name().c_str());
-  tree::Exp *static_link = StaticLink(level, fun_entry->level_->parent_);
 
   auto exp_list = new tree::ExpList();
 
+  tree::Exp *static_link = StaticLink(level, fun_entry->level_->parent_);
   // to avoid segmentation fault
   if(static_link) {
     exp_list->Append(static_link);
-  } 
+  } else {
+    printf("error: don't have static link!\n");
+  }
   
 
   // translate the arguments
@@ -514,6 +513,8 @@ tr::ExpAndTy *RecordExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                       )
                     );
     tree::Stm *move_stm = new tree::MoveStm(dst, exp);
+    // TODO: add for debug
+    assert(stm);
     stm = new tree::SeqStm(stm, move_stm);
     ++count;
   }
@@ -611,12 +612,18 @@ tr::ExpAndTy *IfExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                             new tree::TempExp(r)))))))))  // return r
           );
   } else {
+    // TODO: add for debug
+    assert(test_cx.stm_);
+    assert(then_info->exp_->UnNx());
+    printf("get line 618!\n");
     exp = new tr::NxExp(
             new tree::SeqStm(test_cx.stm_,
               new tree::SeqStm(new tree::LabelStm(t),
                 new tree::SeqStm(then_info->exp_->UnNx(),
                   new tree::LabelStm(f))))
           );
+    // TODO: add for debug
+    printf("get line 625!\n");
   }
   return new tr::ExpAndTy(exp, then_info->ty_);
 }
@@ -651,6 +658,11 @@ tr::ExpAndTy *WhileExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   auto label_list = new std::vector<temp::Label*>();
   label_list->emplace_back(test);
 
+  // TODO: add for debug
+  assert(test_cx.stm_);
+  assert(body_info->exp_->UnNx());
+
+  printf("get line 664!\n");
   exp = new tr::NxExp(
           new tree::SeqStm(new tree::LabelStm(test),
             new tree::SeqStm(test_cx.stm_,
@@ -661,6 +673,7 @@ tr::ExpAndTy *WhileExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                     new tree::LabelStm(done))))))
         );
 
+  printf("get line 674!\n");
   return new tr::ExpAndTy(exp, type::VoidTy::Instance());
 }
 
@@ -716,12 +729,14 @@ tr::ExpAndTy *ForExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                               new tree::BinopExp(tree::PLUS_OP, i->UnEx(), new tree::ConstExp(1)));
   
   // test stm after the first time
+  printf("get line 731!\n");
   tree::Stm *test_stm = new tree::SeqStm(new tree::CjumpStm(tree::LT_OP, i->UnEx(), limit->UnEx(), incr, done),
                           new tree::SeqStm(new tree::LabelStm(incr),
                             new tree::SeqStm(increase_stm,
                               new tree::JumpStm(new tree::NameExp(body), label_list)))
                         );
   
+  printf("get line 738!\n");
   tree::Stm *stm = new tree::SeqStm(i_stm,
                     new tree::SeqStm(limit_stm,
                       new tree::SeqStm(first_test_stm,
@@ -730,7 +745,7 @@ tr::ExpAndTy *ForExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                             new tree::SeqStm(test_stm,
                               new tree::LabelStm(done))))))
                   );
-
+  printf("get line 747!\n");
   venv->EndScope();
 
   return new tr::ExpAndTy(new tr::NxExp(stm), type::VoidTy::Instance());
@@ -887,7 +902,7 @@ tr::Exp *FunctionDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
     }
     
     // translate the body
-    tr::ExpAndTy *body_info = fun_dec->body_->Translate(venv, tenv, func_entry->level_, label, errormsg);
+    tr::ExpAndTy *body_info = fun_dec->body_->Translate(venv, tenv, func_entry->level_, func_entry->label_, errormsg);
     venv->EndScope();
 
     tree::Stm *stm = new tree::MoveStm(new tree::TempExp(reg_manager->ReturnValue()), body_info->exp_->UnEx());

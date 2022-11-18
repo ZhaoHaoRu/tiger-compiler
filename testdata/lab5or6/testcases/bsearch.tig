@@ -9,7 +9,7 @@ let
     function nop() =(print(""))
     function init() =
     	(for i := 0 to N-1
-		do (list[i]:=i*2+1;nop())
+		do (list[i]:=i*2+1;printi(list[i]);nop())
 	)
 	
     function bsearch(left:int,right:int,c:int): int=

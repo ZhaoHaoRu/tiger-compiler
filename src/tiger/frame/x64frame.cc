@@ -191,6 +191,7 @@ X64Frame::X64Frame(temp::Label *name, std::list<bool> formals){
   // initialize
   view_shift_ = nullptr;
   label_ = name;
+  s_offset = -8;
 
   // alloc register or in frame
   for(auto formal : formals) {
@@ -219,7 +220,7 @@ void X64Frame::newFrame(std::list<bool> formals) {
       src = new tree::TempExp(*it);
       ++it;
     } else {
-      src = new tree::MemExp(new tree::BinopExp(tree::BinOp::PLUS_OP, new tree::TempExp(reg_manager->FramePointer()), new tree::ConstExp((nth - max_inreg + 1) * WORDSIZE)));
+      src = new tree::MemExp(new tree::BinopExp(tree::BinOp::PLUS_OP, new tree::TempExp(reg_manager->FramePointer()), new tree::ConstExp((nth - max_inreg + 2) * WORDSIZE)));
     }
     ++nth;
     stm = new tree::MoveStm(dst, src);
@@ -251,7 +252,10 @@ std::string X64Frame::GetLabel() {
 }
 
 tree::Stm* ProcEntryExit1(Frame *frame, tree::Stm *stm) {
-  return new tree::SeqStm(frame->view_shift_, stm);
+  if(frame->view_shift_ != nullptr) {
+    return new tree::SeqStm(frame->view_shift_, stm);
+  } 
+  return stm;
 }
 
 

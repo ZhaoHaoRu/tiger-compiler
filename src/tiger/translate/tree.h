@@ -266,6 +266,7 @@ public:
 
   void Append(Exp *exp) { exp_list_.push_back(exp); }
   void Insert(Exp *exp) { exp_list_.push_front(exp); }
+  void PopFront() {exp_list_.pop_front(); }
   std::list<Exp *> &GetNonConstList() { return exp_list_; }
   const std::list<Exp *> &GetList() { return exp_list_; }
   temp::TempList *MunchArgs(assem::InstrList &instr_list, std::string_view fs);

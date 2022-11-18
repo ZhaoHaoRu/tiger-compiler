@@ -370,15 +370,46 @@ temp::Temp *CallExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
     return nullptr;
   } 
 
-  // call the function, and move the arguments to the arg-registers
-  std::string assem = "callq " + static_cast<tree::NameExp*>(fun_)->name_->Name();
+  // handle static link specially, the first arg is static link, handle it first
+  std::list<Exp *> raw_args = args_->GetNonConstList();
+  int size = raw_args.size();
+  tree::Exp *static_link = raw_args.front();
+  args_->PopFront();
+
+  temp::Temp *static_link_reg = static_link->Munch(instr_list, fs);
+
+  int after_size = args_->GetList().size();
+  printf("the func name: %s, the arg count: %d \n", static_cast<tree::NameExp*>(fun_)->name_->Name().c_str(), after_size);
+  assert(after_size == size - 1);
   auto src_arg_reg_list = args_->MunchArgs(instr_list, fs);
+
+  // store the static link on the stack
+  std::string assem = "subq $" + std::to_string(reg_manager->WordSize()) + ", %rsp";
+  instr_list.Append(new assem::OperInstr(assem, nullptr, nullptr, nullptr));
+  assem = "movq `s0, (%rsp)";
+  instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({static_link_reg}), nullptr));
+
+  // call the function, and move the arguments to the arg-registers
+  assem = "callq " + static_cast<tree::NameExp*>(fun_)->name_->Name();
+
   instr_list.Append(new assem::OperInstr(assem, reg_manager->ArgRegs(), src_arg_reg_list, nullptr));
 
   // move the function return value to res_reg
   assem = "movq `s0, `d0";
   instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({res_reg}), new temp::TempList({reg_manager->ReturnValue()})));
 
+  // restore the stack pointer
+  int word_size = reg_manager->WordSize();
+  int offset = word_size;
+  if(raw_args.size() > 6) {
+    offset += (raw_args.size() - 6) * word_size;
+  }
+  assem = "addq $" + std::to_string(offset) + ", %rsp";
+  instr_list.Append(new assem::OperInstr(assem, nullptr, nullptr, nullptr));
+
+  // restore the arglist
+  args_->Insert(static_link);
+  
   return res_reg;
 }
 
@@ -391,6 +422,7 @@ temp::TempList *ExpList::MunchArgs(assem::InstrList &instr_list, std::string_vie
   temp::TempList *res_list = new temp::TempList();
 
   int arg_reg_size = arg_reg_list->GetList().size();
+  int arg_count = exp_list_.size();
   auto it = arg_reg_list->GetList().begin();
   int i = 0;
   std::string assem;
@@ -411,13 +443,20 @@ temp::TempList *ExpList::MunchArgs(assem::InstrList &instr_list, std::string_vie
       ++it;
 
     } else {
-      // move the argument to stack
-      int offset = (i - arg_reg_size) * word_size;
+      // move the argument to stack, the order is arg n,arg n-1...arg7 from high to low address
+      int offset = (i - arg_count) * word_size;
       assem = "movq `s0, " + std::to_string(offset) + "(`s1)";
       instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({ret_reg, reg_manager->StackPointer()}), nullptr));
     }
     ++i;
   } 
+
+  // move the stack pointer to the top of stack, if necessary
+  if(arg_count > arg_reg_size) {
+    int offset = (arg_count - arg_reg_size) * word_size;
+    assem = "subq $" + std::to_string(offset) + ", %rsp";
+    instr_list.Append(new assem::OperInstr(assem, nullptr, nullptr, nullptr));
+  }
 }
 
 } // namespace tree
