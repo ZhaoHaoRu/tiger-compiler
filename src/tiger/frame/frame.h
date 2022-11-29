@@ -3,6 +3,9 @@
 
 #include <list>
 #include <memory>
+// TODO: add this lib
+#include <vector>
+#include <cassert>
 #include <string>
 
 #include "tiger/frame/temp.h"
@@ -63,6 +66,11 @@ public:
 
   [[nodiscard]] virtual temp::Temp *ReturnValue() = 0;
 
+  /**
+   * add this
+   */ 
+  [[nodiscard]] virtual temp::Temp *NthRegister(int n) = 0;
+
   temp::Map *temp_map_;
 protected:
   std::vector<temp::Temp *> regs_;
@@ -71,13 +79,31 @@ protected:
 class Access {
 public:
   /* TODO: Put your lab5 code here */
-  
+  enum Kind {IN_REG, IN_FRAME};
+  Kind kind_;
+
+  Access(Kind kind): kind_(kind) {}
+
+  virtual tree::Exp *ToExp(tree::Exp *framePtr) const = 0;
+
   virtual ~Access() = default;
   
 };
 
 class Frame {
   /* TODO: Put your lab5 code here */
+public:
+  std::list<frame::Access *> formals_;
+  std::list<frame::Access *> locals_;
+  temp::Label *label_;
+  tree::Stm *view_shift_;
+  int s_offset;
+
+  // TODO: perhaps need to supply
+  ///@brief for view shift
+  virtual void newFrame(std::list<bool> formals) = 0;
+  virtual Access* AllocLocal(bool escape) = 0;
+  virtual std::string GetLabel() = 0;
 };
 
 /**
@@ -127,12 +153,17 @@ public:
   void PushBack(Frag *frag) { frags_.emplace_back(frag); }
   const std::list<Frag*> &GetList() { return frags_; }
 
+
+
 private:
   std::list<Frag*> frags_;
 };
 
 /* TODO: Put your lab5 code here */
-
+tree::Exp* ExternalCall(std::string s, tree::ExpList* args);
+tree::Stm* ProcEntryExit1(Frame *frame, tree::Stm *stm);
+assem::InstrList* ProcEntryExit2(assem::InstrList* body);
+assem::Proc* ProcEntryExit3(frame::Frame* frame, assem::InstrList* body);
 } // namespace frame
 
 #endif

@@ -3,11 +3,14 @@
 
 #include <list>
 #include <memory>
+#include <cassert>
+#include <iostream>
 
 #include "tiger/absyn/absyn.h"
 #include "tiger/env/env.h"
 #include "tiger/errormsg/errormsg.h"
 #include "tiger/frame/frame.h"
+#include "tiger/frame/x64frame.h"
 #include "tiger/semant/types.h"
 
 namespace tr {
@@ -20,6 +23,14 @@ class PatchList {
 public:
   void DoPatch(temp::Label *label) {
     for(auto &patch : patch_list_) *patch = label;
+  }
+
+  void DoPatch2(temp::Label **label) {
+    for(auto &patch : patch_list_) patch = label;
+  }
+
+  void AddPatch(temp::Label **label) {
+    patch_list_.emplace_back(label);
   }
 
   static PatchList JoinPatch(const PatchList &first, const PatchList &second) {
@@ -57,6 +68,11 @@ public:
   Level *parent_;
 
   /* TODO: Put your lab5 code here */
+  Level(frame::Frame *f, Level *p): frame_(f), parent_(p) {}
+  std::list<Access*> Formals(Level *level) { return {};}
+  static Level* newLevel(temp::Label *name, std::list<bool> formals, Level *parent) {
+    return new Level(new frame::X64Frame(name, formals), parent);
+  }
 };
 
 class ProgTr {
@@ -75,7 +91,16 @@ public:
   std::unique_ptr<err::ErrorMsg> TransferErrormsg() {
     return std::move(errormsg_);
   }
+  
+  ProgTr(std::unique_ptr<absyn::AbsynTree> absyn_tree, std::unique_ptr<err::ErrorMsg> errormsg): 
+    absyn_tree_(std::move(absyn_tree)), errormsg_(std::move(errormsg)){
+      tenv_ = std::make_unique<env::TEnv>();
+      venv_ = std::make_unique<env::VEnv>();
 
+      temp::Label *main_label = temp::LabelFactory::NamedLabel("tigermain");
+      frame::Frame *main_frame = new frame::X64Frame(main_label, {});
+      main_level_ = std::make_unique<Level>(main_frame, nullptr);
+  }
 
 private:
   std::unique_ptr<absyn::AbsynTree> absyn_tree_;

@@ -17,6 +17,8 @@ public:
   AssemGen() = delete;
   explicit AssemGen(std::string_view infile) {
     std::string outfile = static_cast<std::string>(infile) + ".s";
+    // TODO: add this for debug
+    // out_ = stdout;
     out_ = fopen(outfile.data(), "w");
   }
   AssemGen(const AssemGen &assem_generator) = delete;

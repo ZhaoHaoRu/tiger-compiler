@@ -280,6 +280,7 @@ class StateTable(object):
                 return imm
                 
         else:
+            print("\nmem[:imm_index]:", mem, imm_index, mem[:imm_index], "end")
             return int(mem[:imm_index], 16) if mem.startswith('0x') else int(mem[:imm_index])
 
     def get_mem_table(self):
