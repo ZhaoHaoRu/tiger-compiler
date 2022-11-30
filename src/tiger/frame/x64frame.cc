@@ -94,9 +94,9 @@ X64RegManager::X64RegManager():RegManager() {
 
 temp::TempList *X64RegManager::Registers() {
   std::list<temp::Temp *> initial_list(regs_.begin(), regs_.end());
-  // delete rsi
+  // skip rsp
   auto it = initial_list.begin();
-  for(int i = 0; i < 4; ++i) {
+  for(int i = 0; i < 7; ++i) {
     ++it;
   }
   initial_list.erase(it);

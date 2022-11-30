@@ -81,4 +81,54 @@ void Map::DumpMap(FILE *out) {
   }
 }
 
+bool TempList::Contain(Temp *new_temp) {
+  assert(new_temp != nullptr);
+  for(auto temp : temp_list_) {
+    if(temp->Int() == new_temp->Int()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+TempList *TempList::Union(TempList *new_temp_list) {
+  auto res = new TempList();
+  for(auto temp : temp_list_) {
+    res->Append(temp);
+  }
+  for(auto temp: new_temp_list->GetList()) {
+    if(!res->Contain(temp)) {
+      res->Append(temp);
+    }
+  }
+  return res;
+}
+
+TempList *TempList::Diff(TempList *new_temp_list) {
+  auto res = new TempList();
+  for(auto temp : temp_list_) {
+    if(!new_temp_list->Contain(temp)) {
+      res->Append(temp);
+    }
+  }
+  return res;
+}
+
+bool TempList::Equal(TempList *new_temp_list) {
+  auto it1 = temp_list_.begin();
+  auto another_temp_list = new_temp_list->GetList();
+  auto it2 = another_temp_list.begin();
+
+  if(temp_list_.size() != another_temp_list.size()) {
+    return false;
+  }
+
+  for(auto elem : temp_list_) {
+    if(!new_temp_list->Contain(elem)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 } // namespace temp

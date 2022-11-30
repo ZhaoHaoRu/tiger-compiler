@@ -32,6 +32,7 @@ public:
   }
   MoveList *Union(MoveList *list);
   MoveList *Intersect(MoveList *list);
+  MoveList *Diff(MoveList *list);
 
 private:
   std::list<std::pair<INodePtr, INodePtr>> move_list_;
@@ -62,7 +63,7 @@ private:
 
   std::unique_ptr<graph::Table<assem::Instr, temp::TempList>> in_;
   std::unique_ptr<graph::Table<assem::Instr, temp::TempList>> out_;
-  tab::Table<temp::Temp, INode> *temp_node_map_;
+  tab::Table<temp::Temp, INode> *temp_node_map_;  // NOTE: to store the map between temp and graph node
 
   void LiveMap();
   void InterfGraph();
