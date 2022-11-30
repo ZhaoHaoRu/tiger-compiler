@@ -38,6 +38,7 @@ private:
   live::MoveList* active_moves;
   live::MoveList* coalesce_moves;
   live::MoveList* constrained_moves;
+  live::MoveList* frozen_moves;
   std::unordered_map<live::INodePtr, live::MoveList*> move_list;
   std::unordered_map<live::INodePtr, int> degrees;
   std::set<std::pair<live::INodePtr, live::INodePtr>> adj_set;
@@ -55,7 +56,8 @@ private:
   void AddWorkList(live::INodePtr u);
   bool OK(live::INodePtr t, live::INodePtr r);
   bool Conservertive(live::INodeListPtr node);
-  
+  void Combine(live::INodePtr u, live::INodePtr v);
+  void FreezeMoves(live::INodePtr u);
 
 public:
   Color(live::LiveGraph live_graph);
@@ -65,6 +67,8 @@ public:
   void MakeWorkList();
   void Simplify();
   void Coalesce();
+  void Freeze();
+  void SelectSpill();
 };
 } // namespace col
 

@@ -95,6 +95,56 @@ namespace col {
         return k < col::PRECOLORED_COUNT;
     }
 
+    void Color::Combine(live::INodePtr u, live::INodePtr v) {
+        if(freeze_worklist->Contain(v)) {
+            freeze_worklist->DeleteNode(v);
+        } else {
+            spill_worklist->DeleteNode(v);
+        }
+
+        coalesced_nodes->Append(v);
+        alias[v] = u;
+        move_list[u] = move_list[u]->Union(move_list[v]);
+
+        // TODO: whether it is available?
+        EnableMoves(live::INodeListPtr(v));
+
+        auto adj_list = Adjacent(v)->GetList();
+        for(auto t : adj_list) {
+            AddEdge(t, u);
+            Decrement(t);
+        }
+        
+        if(degrees[u] >= PRECOLORED_COUNT && freeze_worklist->Contain(u)) {
+            freeze_worklist->DeleteNode(u);
+            spill_worklist->Append(u);
+        }
+    }
+
+    void Color::FreezeMoves(live::INodePtr u) {
+        live::MoveList* node_moves = NodeMoves(u);
+        assert(node_moves != nullptr);
+
+        auto node_moves_list = node_moves->GetList();
+        for(auto m : node_moves_list) {
+            auto x = m.first, y = m.second;
+            live::INodePtr v;
+            if(GetAlias(y) == GetAlias(u)) {
+                v = GetAlias(x);
+            } else {
+                v = GetAlias(y);
+            }
+
+            active_moves->Delete(x, y);
+            frozen_moves->Append(x, y);
+
+            if(NodeMoves(v)->GetList().empty() && degrees[v] < col::PRECOLORED_COUNT) {
+                freeze_worklist->DeleteNode(v);
+                simplify_worklist->Append(v);
+            }
+        }
+    }
+
 
 /*-------------------------- public color functions ----------------------------------*/
 
@@ -118,6 +168,7 @@ namespace col {
         active_moves = new live::MoveList();
         coalesce_moves = new live::MoveList();
         constrained_moves = new live::MoveList();
+        frozen_moves = new live::MoveList();
     }
 
     void Color::Build() {
@@ -226,15 +277,18 @@ namespace col {
         assert(new_pair.second != nullptr); 
         worklist_moves->Delete(m.first, m.second);
 
-        // FIXME: what it is? calculate the condition one
+        // George
         auto adj_list = Adjacent(new_pair.second)->GetList();
-        bool satisfied = true;
+        bool satisfy_george = true;
         for(auto t : adj_list) {
             if(!OK(t, new_pair.first)) {
-                satisfied = false;
+                satisfy_george = false;
                 break;
             }
         }
+
+        // briggs
+        bool satisfy_briggs = Conservertive(Adjacent(new_pair.first)->Union(Adjacent(new_pair.second)));
 
         if(x == y) {
             coalesce_moves->Append(new_pair.first, new_pair.second);
@@ -243,6 +297,29 @@ namespace col {
             constrained_moves->Append(new_pair.first, new_pair.second);
             AddWorkList(new_pair.first);
             AddWorkList(new_pair.second);
-        } else if(precolored_regs.count(new_pair.first->NodeInfo()) && )
+        } else if((precolored_regs.count(new_pair.first->NodeInfo()) && satisfy_george) || (!precolored_regs.count(new_pair.second->NodeInfo()) && satisfy_briggs)) {
+            coalesce_moves->Append(new_pair.first, new_pair.second);
+            Combine(new_pair.first, new_pair.second);
+            AddWorkList(new_pair.first);
+        } else {
+            active_moves->Append(new_pair.first, new_pair.second);
+        }
+    }
+
+    void Color::Freeze() {
+        auto u = freeze_worklist->GetList().front();
+        freeze_worklist->DeleteNode(u);
+        simplify_worklist->Append(u);
+        FreezeMoves(u);
+    }
+
+    void Color::SelectSpill() {
+        // select the biggest degree
+        auto spill_worklist_nodes = spill_worklist->GetList();
+
+        int max_degree = 0;
+        live::INodePtr m;
+        for(auto node : spill_worklist_nodes) {
+        }
     }
 } // namespace col
