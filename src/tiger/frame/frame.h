@@ -71,6 +71,8 @@ public:
    */ 
   [[nodiscard]] virtual temp::Temp *NthRegister(int n) = 0;
 
+  [[nodiscard]] virtual std::string *NthRegisterName(int n) = 0;
+
   temp::Map *temp_map_;
 protected:
   std::vector<temp::Temp *> regs_;

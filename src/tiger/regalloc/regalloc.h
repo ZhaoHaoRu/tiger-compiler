@@ -1,6 +1,7 @@
 #ifndef TIGER_REGALLOC_REGALLOC_H_
 #define TIGER_REGALLOC_REGALLOC_H_
 
+#include <memory>
 #include "tiger/codegen/assem.h"
 #include "tiger/codegen/codegen.h"
 #include "tiger/frame/frame.h"
@@ -28,6 +29,19 @@ public:
 
 class RegAllocator {
   /* TODO: Put your lab6 code here */
+private:
+  frame::Frame *frame_;
+  std::unique_ptr<cg::AssemInstr> instr_list_;
+  temp::Map *coloring;
+  ra::Result regalloc_result;
+
+public:
+  RegAllocator(frame::Frame *frame, std::unique_ptr<cg::AssemInstr> instr_list): frame_(frame),
+    instr_list_(std::move(instr_list)) {}
+  
+  void RegAlloc();
+  void MergeMoves();
+  std::unique_ptr<ra::Result> TransferResult();
 };
 
 } // namespace ra

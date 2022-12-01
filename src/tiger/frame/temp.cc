@@ -131,4 +131,13 @@ bool TempList::Equal(TempList *new_temp_list) {
   return true;
 }
 
+void TempList::ReplaceTemp(temp::Temp *old_temp, temp::Temp *new_temp) {
+  for(auto &temp : temp_list_) {
+    if(temp == old_temp) {
+      temp = new_temp;
+      break;
+    }
+  }
+}
+
 } // namespace temp

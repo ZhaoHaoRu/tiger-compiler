@@ -184,6 +184,15 @@ temp::Temp *X64RegManager::NthRegister(int n) {
   return regs_[n];
 }
 
+std::string *X64RegManager::NthRegisterName(int n) {
+  assert(n >= 0 && n < regs_.size());
+
+  temp::Temp *reg = regs_[n];
+  std::string *result = temp_map_->Look(reg);
+  assert(result != nullptr);
+  return result;
+}
+
 /* TODO: Put your lab5 code here */
 X64Frame::X64Frame(temp::Label *name, std::list<bool> formals){
   // initialize

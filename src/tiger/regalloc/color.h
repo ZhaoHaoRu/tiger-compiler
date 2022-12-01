@@ -33,6 +33,8 @@ private:
   live::INodeListPtr spill_nodes;
   live::INodeListPtr select_stack;
   live::INodeListPtr coalesced_nodes;
+  live::INodeListPtr colored_nodes;
+  live::INodeListPtr initial_;
 
   live::MoveList* worklist_moves;
   live::MoveList* active_moves;
@@ -44,7 +46,7 @@ private:
   std::set<std::pair<live::INodePtr, live::INodePtr>> adj_set;
   std::unordered_map<live::INodePtr, live::INodeListPtr> adj_list;
   std::unordered_map<live::INodePtr, live::INodePtr> alias;
-  std::unordered_map<temp::Temp*, std::string> color_map;
+  std::unordered_map<temp::Temp*, int> color;
 
   // some auxiliary functions
   live::INodeListPtr Adjacent(live::INodePtr n);
@@ -58,6 +60,9 @@ private:
   bool Conservertive(live::INodeListPtr node);
   void Combine(live::INodePtr u, live::INodePtr v);
   void FreezeMoves(live::INodePtr u);
+  void InitColors(std::set<int> &ok_colors);
+
+  col::Result color_result;
 
 public:
   Color(live::LiveGraph live_graph);
@@ -69,6 +74,11 @@ public:
   void Coalesce();
   void Freeze();
   void SelectSpill();
+  void AssignColor();
+  assem::InstrList* RewriteProgram(frame::Frame *frame, assem::InstrList *prev_instrs, std::list<temp::Temp*> &new_temps);
+  void ColorMain();
+  col::Result getResult();
+  
 };
 } // namespace col
 
