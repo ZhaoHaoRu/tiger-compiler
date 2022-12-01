@@ -75,7 +75,6 @@ public:
   void Freeze();
   void SelectSpill();
   void AssignColor();
-  assem::InstrList* RewriteProgram(frame::Frame *frame, assem::InstrList *prev_instrs, std::list<temp::Temp*> &new_temps);
   void ColorMain();
   col::Result getResult();
   
