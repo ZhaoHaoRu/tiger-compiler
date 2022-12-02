@@ -50,7 +50,8 @@ void CodeGen::SaveCalleeSaved(assem::InstrList &instr_list, std::string_view fs)
 
   for(auto reg : reg_list) {
     temp::Temp *new_temp = temp::TempFactory::NewTemp();
-    instr_list.Append(new assem::OperInstr(assem, new temp::TempList({new_temp}), new temp::TempList({reg}), nullptr));
+    ///@note for lab6, must be move instr
+    instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({new_temp}), new temp::TempList({reg})));
     tmp_save_regs.emplace_back(new_temp);
   }
 }
@@ -65,7 +66,7 @@ void CodeGen::RestoreCalleeSaved(assem::InstrList &instr_list, std::string_view 
   int pos = tmp_save_regs.size() - 1;
   // restore the callee-save register in reverse order
   for(auto it = reg_list.rbegin(); it != reg_list.rend(); ++it) {
-    instr_list.Append(new assem::OperInstr(assem, new temp::TempList({*it}), new temp::TempList({tmp_save_regs[pos]}), nullptr));
+    instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({*it}), new temp::TempList({tmp_save_regs[pos]})));
     --pos;
   }
   tmp_save_regs.clear();
@@ -508,6 +509,8 @@ temp::TempList *ExpList::MunchArgs(assem::InstrList &instr_list, std::string_vie
     assem = "subq $" + std::to_string(offset) + ", %rsp";
     instr_list.Append(new assem::OperInstr(assem, nullptr, nullptr, nullptr));
   }
+
+  return res_list;
 }
 
 } // namespace tree

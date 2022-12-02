@@ -14,19 +14,19 @@ namespace ra {
             fg::FlowGraphFactory flowgraph_factory(instr_list_->GetInstrList());
             flowgraph_factory.AssemFlowGraph();
             fg::FGraphPtr flow_graph = flowgraph_factory.GetFlowGraph();
-
+            printf("finish flow gragh\n");
             // live graph
             live::LiveGraphFactory livegraph_factory(flow_graph);
             livegraph_factory.Liveness();
             live::LiveGraph live_graph = livegraph_factory.GetLiveGraph();
-
+            printf("finish live gragh\n");
             // color
             col::Color color_tool(live_graph);
             color_tool.ColorMain();
             col::Result color_result = color_tool.getResult();
             coloring = color_result.coloring;
             spills = color_result.spills;
-            
+            printf("finish color main\n");
             // rewrite the program
             if(!spills || spills->GetList().empty()) {
                 break;
@@ -38,10 +38,6 @@ namespace ra {
         }
 
         MergeMoves();
-
-        // generate the result
-        regalloc_result->coloring_ = coloring;
-        regalloc_result->il_ = instr_list_->GetInstrList();
     }
 
     assem::InstrList *RegAllocator::RewriteProgram(std::list<temp::Temp*> &new_temps) {
@@ -72,9 +68,9 @@ namespace ra {
                 if(src && src->Contain(spill_temp)) {
                     // load
                     assem = "movq (" + frame_->label_->Name() + "_framesize" + std::to_string(frame_->s_offset) 
-                            + ")(%rsp), `d0";
+                            + ")(`s0), `d0";
                     temp::Temp *new_temp = temp::TempFactory::NewTemp();
-                    assem::Instr *new_instr = new assem::MoveInstr(assem, new temp::TempList({new_temp}), nullptr);
+                    assem::Instr *new_instr = new assem::OperInstr(assem, new temp::TempList({new_temp}), new temp::TempList({rsp}), nullptr);
                     
                     tmp_instr_list.push_back(new_instr);
                     new_temps.push_back(new_temp);
@@ -88,9 +84,9 @@ namespace ra {
                     def_change = true;
                     // store
                     temp::Temp *new_temp = temp::TempFactory::NewTemp();
-                    assem = "movq (`s0), (" + frame_->label_->Name() + "_framesize" + std::to_string(frame_->s_offset) 
-                        + ")(%rsp)";
-                    assem::Instr *new_instr = new assem::MoveInstr(assem, nullptr, new temp::TempList({new_temp}));
+                    assem = "movq `s0, (" + frame_->label_->Name() + "_framesize" + std::to_string(frame_->s_offset) 
+                        + ")(`d0)";
+                    assem::Instr *new_instr = new assem::OperInstr(assem, new temp::TempList({rsp}), new temp::TempList({new_temp}), nullptr);
                     // replace the former reg
                     instr->Def()->ReplaceTemp(spill_temp, new_temp);
                     // need to insert the former instruction first
@@ -137,6 +133,9 @@ namespace ra {
     }
 
     std::unique_ptr<ra::Result> RegAllocator::TransferResult() {
-        return std::make_unique<ra::Result>(regalloc_result);
+        auto regalloc_result = std::make_unique<ra::Result>();
+        regalloc_result->coloring_ = coloring;
+        regalloc_result->il_ = instr_list_->GetInstrList();
+        return std::move(regalloc_result);
     }
 } // namespace ra

@@ -102,8 +102,7 @@ temp::TempList *X64RegManager::Registers() {
   initial_list.erase(it);
 
   temp::TempList *result = new temp::TempList();
-  std::list<temp::Temp *> dest_list = result->GetList();
-  dest_list = initial_list;
+  result->SetContent(initial_list);
   return result;
 }
 

@@ -19,7 +19,8 @@ public:
 class Instr {
 public:
   virtual ~Instr() = default;
-
+  // TODO: add this for debug
+  virtual std::string getAssem() = 0;
   virtual void Print(FILE *out, temp::Map *m) const = 0;
   [[nodiscard]] virtual temp::TempList *Def() const = 0;
   [[nodiscard]] virtual temp::TempList *Use() const = 0;
@@ -35,6 +36,7 @@ public:
             Targets *jumps)
       : assem_(std::move(assem)), dst_(dst), src_(src), jumps_(jumps) {}
 
+  std::string getAssem() override {return assem_; }
   void Print(FILE *out, temp::Map *m) const override;
   [[nodiscard]] temp::TempList *Def() const override;
   [[nodiscard]] temp::TempList *Use() const override;
@@ -48,6 +50,7 @@ public:
   LabelInstr(std::string assem, temp::Label *label)
       : assem_(std::move(assem)), label_(label) {}
 
+  std::string getAssem() override {return assem_; }
   void Print(FILE *out, temp::Map *m) const override;
   [[nodiscard]] temp::TempList *Def() const override;
   [[nodiscard]] temp::TempList *Use() const override;
@@ -61,6 +64,7 @@ public:
   MoveInstr(std::string assem, temp::TempList *dst, temp::TempList *src)
       : assem_(std::move(assem)), dst_(dst), src_(src) {}
 
+  std::string getAssem() override {return assem_; }
   void Print(FILE *out, temp::Map *m) const override;
   [[nodiscard]] temp::TempList *Def() const override;
   [[nodiscard]] temp::TempList *Use() const override;

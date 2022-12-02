@@ -23,14 +23,10 @@ void FlowGraphFactory::AssemFlowGraph() {
     }
 
     // if jmp instr and jump target not empty
-    if(typeid(*instr) == typeid(assem::OperInstr)) {
-      assem::OperInstr *oper_instr = static_cast<assem::OperInstr*>(instr);
-
-      if(oper_instr->assem_.find("jmp") != std::string::npos) {
-        prev = nullptr;
-      } else {
-        prev = cur;
-      }
+    if(typeid(*instr) == typeid(assem::OperInstr) && static_cast<assem::OperInstr*>(instr)->assem_.find("jmp") != std::string::npos) {
+      prev = nullptr;
+    } else {
+      prev = cur;
     }
   }
 

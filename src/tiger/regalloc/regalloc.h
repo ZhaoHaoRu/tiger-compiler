@@ -1,7 +1,6 @@
 #ifndef TIGER_REGALLOC_REGALLOC_H_
 #define TIGER_REGALLOC_REGALLOC_H_
 
-#include <memory>
 #include "tiger/codegen/assem.h"
 #include "tiger/codegen/codegen.h"
 #include "tiger/frame/frame.h"
@@ -24,7 +23,7 @@ public:
   Result(Result &&result) = delete;
   Result &operator=(const Result &result) = delete;
   Result &operator=(Result &&result) = delete;
-  ~Result();
+  ~Result(){};
 };
 
 class RegAllocator {
@@ -35,11 +34,10 @@ private:
   std::list<temp::Temp*> new_temps; // new add temps after rewrite
   temp::Map *coloring;
   live::INodeListPtr spills;
-  ra::Result *regalloc_result;
 
 public:
   RegAllocator(frame::Frame *frame, std::unique_ptr<cg::AssemInstr> instr_list): frame_(frame),
-    instr_list_(std::move(instr_list)), regalloc_result(new ra::Result()) {}
+    instr_list_(std::move(instr_list)), spills(new live::INodeList()), coloring(nullptr){}
   
   void RegAlloc();
   void MergeMoves();

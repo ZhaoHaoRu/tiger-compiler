@@ -93,14 +93,23 @@ bool TempList::Contain(Temp *new_temp) {
 
 TempList *TempList::Union(TempList *new_temp_list) {
   auto res = new TempList();
+  // printf("get line 96");
   for(auto temp : temp_list_) {
     res->Append(temp);
   }
-  for(auto temp: new_temp_list->GetList()) {
-    if(!res->Contain(temp)) {
-      res->Append(temp);
+  // printf("get line 99");
+  if(new_temp_list) {
+    // printf("get line 101");
+    auto temps = new_temp_list->GetList();
+    // printf("get line 102");
+    for(auto temp : temps) {
+      // printf("get line 103");
+      if(!res->Contain(temp)) {
+        res->Append(temp);
+      }
     }
   }
+  
   return res;
 }
 
@@ -115,13 +124,16 @@ TempList *TempList::Diff(TempList *new_temp_list) {
 }
 
 bool TempList::Equal(TempList *new_temp_list) {
-  auto it1 = temp_list_.begin();
   auto another_temp_list = new_temp_list->GetList();
-  auto it2 = another_temp_list.begin();
 
   if(temp_list_.size() != another_temp_list.size()) {
     return false;
   }
+
+  // printf("get equal line 133\n");
+  auto it1 = temp_list_.begin();
+  auto it2 = another_temp_list.begin();
+  // printf("get equal line 136\n");
 
   for(auto elem : temp_list_) {
     if(!new_temp_list->Contain(elem)) {
