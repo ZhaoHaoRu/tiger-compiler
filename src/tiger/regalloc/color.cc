@@ -334,6 +334,7 @@ namespace col {
         }
         assert(node);
         simplify_worklist->DeleteNode(node);
+        printf("finish simplify\n");
     }
 
     void Color::Coalesce() {
@@ -476,7 +477,7 @@ namespace col {
         auto coalesced_nodes_list = coalesced_nodes->GetList();
         for(auto node : coalesced_nodes_list) {
             auto this_alias = GetAlias(node);
-            printf("the alias: %d", this_alias->NodeInfo()->Int());
+            // printf("the alias: %d", this_alias->NodeInfo()->Int());
             assert(color.count(this_alias->NodeInfo()));
             color[node->NodeInfo()] = color[this_alias->NodeInfo()];
         }
@@ -487,6 +488,7 @@ namespace col {
         MakeWorkList();
         do {
             if(!simplify_worklist->GetList().empty()) {
+                printf("simplify\n");
                 Simplify();
             } else if(!worklist_moves->GetList().empty()) {
                 printf("caolesce\n");
@@ -494,7 +496,7 @@ namespace col {
             } else if(!freeze_worklist->GetList().empty()) {
                 printf("freeze\n");
                 Freeze();
-            } else if(!simplify_worklist->GetList().empty()) {
+            } else if(!spill_worklist->GetList().empty()) {
                 printf("selectspill\n");
                 SelectSpill();
             }
@@ -502,7 +504,7 @@ namespace col {
             || !freeze_worklist->GetList().empty() || !spill_worklist->GetList().empty());
         
         AssignColor();
-
+    
         // generate the result
         color_result.coloring = temp::Map::Empty();
         for(auto color_elem : color) {
@@ -511,6 +513,7 @@ namespace col {
 
         color_result.spills = new live::INodeList();
         color_result.spills->CatList(spill_nodes);
+        printf("finish color main\n");
     }
 
     col::Result Color::getResult() {

@@ -11,33 +11,42 @@ namespace ra {
         while(true) {
             // liveness analysis
             // flow graph
+            printf("begin flow graph\n");
+            assert(instr_list_);
             fg::FlowGraphFactory flowgraph_factory(instr_list_->GetInstrList());
+            printf("begin AssemFlowGraph\n");
             flowgraph_factory.AssemFlowGraph();
+            printf("begin GetFlowGraph\n");
             fg::FGraphPtr flow_graph = flowgraph_factory.GetFlowGraph();
             printf("finish flow gragh\n");
             // live graph
+            printf("begin live graph\n");
             live::LiveGraphFactory livegraph_factory(flow_graph);
             livegraph_factory.Liveness();
             live::LiveGraph live_graph = livegraph_factory.GetLiveGraph();
             printf("finish live gragh\n");
             // color
             col::Color color_tool(live_graph);
+            printf("begin color main\n");
             color_tool.ColorMain();
             col::Result color_result = color_tool.getResult();
             coloring = color_result.coloring;
             spills = color_result.spills;
-            printf("finish color main\n");
+            printf("finish color main in regalloc\n");
             // rewrite the program
             if(!spills || spills->GetList().empty()) {
                 break;
             }
             new_temps.clear();
+            printf("begin rewrite the program\n");
             auto new_instr_list = RewriteProgram(new_temps);
-            instr_list_.reset(new cg::AssemInstr(new_instr_list));
+            printf("finish rewrite the program\n");
+            instr_list_ = new cg::AssemInstr(new_instr_list);
             // TODO: how new temps use?
         }
-
+        printf("begin merge moves\n");
         MergeMoves();
+        printf("finish merge moves\n");
     }
 
     assem::InstrList *RegAllocator::RewriteProgram(std::list<temp::Temp*> &new_temps) {
@@ -57,9 +66,6 @@ namespace ra {
             frame_->s_offset -= wordsize;
 
             for(auto instr : prev_instr_list) {
-                if(typeid(*instr) == typeid(assem::LabelInstr)) {
-                    continue;
-                }
                 dst = instr->Def();
                 src = instr->Use();
                 def_change = false;
@@ -76,9 +82,11 @@ namespace ra {
                     new_temps.push_back(new_temp);
                     // TODO: whether it is avaliable?
                     // replace the former reg
-                    instr->Use()->ReplaceTemp(spill_temp, new_temp);
+                    instr->ReplaceUse(spill_temp, new_temp);
+                    // instr->Use()->ReplaceTemp(spill_temp, new_temp);
+                    assert(instr->Use()->Equal(src) == false);
                 }
-
+                // tmp_instr_list.push_back(instr);
                 // check def
                 if(dst && dst->Contain(spill_temp)) {
                     def_change = true;
@@ -88,7 +96,9 @@ namespace ra {
                         + ")(`d0)";
                     assem::Instr *new_instr = new assem::OperInstr(assem, new temp::TempList({rsp}), new temp::TempList({new_temp}), nullptr);
                     // replace the former reg
-                    instr->Def()->ReplaceTemp(spill_temp, new_temp);
+                    instr->ReplaceDef(spill_temp, new_temp);
+                    // instr->Def()->ReplaceTemp(spill_temp, new_temp);
+                    assert(instr->Def()->Equal(dst) == false);
                     // need to insert the former instruction first
                     tmp_instr_list.push_back(instr);
                     tmp_instr_list.push_back(new_instr);
@@ -101,10 +111,12 @@ namespace ra {
                 }
             }
             prev_instr_list = tmp_instr_list;
+            tmp_instr_list.clear();
         }
 
         // generate the InstrList
         new_instrs->setContent(prev_instr_list);
+        return new_instrs;
         
         // generate new temp's according 
         // TODO: where to do these?
@@ -115,21 +127,32 @@ namespace ra {
     }
 
     void RegAllocator::MergeMoves() {
+        assert(instr_list_);
         std::list<assem::Instr*> instrs = instr_list_->GetInstrList()->GetList();
+        printf("merge moves get list success!\n");
+        temp::Temp *rsp = reg_manager->StackPointer();
         assem::InstrList *simplified = new assem::InstrList();
         for(auto instr : instrs) {
+            assert(instr->Def());
+            assert(instr->Use());
+            printf("get line 126\n");
             if(typeid(*instr) == typeid(assem::MoveInstr) && !instr->Def()->GetList().empty() 
                 && !instr->Use()->GetList().empty()) {
                 auto dst = instr->Def()->GetList().front();
                 auto src = instr->Use()->GetList().front();
+                if(dst == rsp || src == rsp) {
+                    continue;
+                }
                 if(coloring->Look(dst) == coloring->Look(src)) {   
                     // the same register, skip
                     continue;
                 }
             }
             simplified->Append(instr);
+            printf("get line 139\n");
         }
-        instr_list_.reset(new cg::AssemInstr(simplified));
+        printf("get line 141\n");
+        instr_list_ = new cg::AssemInstr(simplified);
     }
 
     std::unique_ptr<ra::Result> RegAllocator::TransferResult() {

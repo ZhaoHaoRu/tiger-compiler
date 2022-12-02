@@ -143,13 +143,16 @@ bool TempList::Equal(TempList *new_temp_list) {
   return true;
 }
 
-void TempList::ReplaceTemp(temp::Temp *old_temp, temp::Temp *new_temp) {
+TempList *TempList::ReplaceTemp(temp::Temp *old_temp, temp::Temp *new_temp) {
+  temp::TempList *new_templist = new temp::TempList();
   for(auto &temp : temp_list_) {
     if(temp == old_temp) {
-      temp = new_temp;
-      break;
+      new_templist->Append(new_temp);
+    } else {
+      new_templist->Append(temp);
     }
   }
+  return new_templist;
 }
 
 } // namespace temp
