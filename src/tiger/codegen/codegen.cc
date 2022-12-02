@@ -193,7 +193,7 @@ void MoveStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
 
         instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({src_reg, dst_reg}), nullptr));
       
-      }else if(dst_binop->op_== PLUS_OP && typeid(*dst_binop->left_) == typeid(ConstExp)) {
+      } else if(dst_binop->op_== PLUS_OP && typeid(*dst_binop->left_) == typeid(ConstExp)) {
         Exp *e1 = dst_binop->right_; 
         Exp *e2 = src_;
         /*MOVE(MEM(i+e1), e2) */

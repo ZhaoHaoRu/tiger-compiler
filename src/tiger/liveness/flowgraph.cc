@@ -5,7 +5,6 @@ namespace fg {
 void FlowGraphFactory::AssemFlowGraph() {
   /* TODO: Put your lab6 code here */
   assert(instr_list_);
-  printf("get line 8, the address: %x\n", instr_list_);
   auto instrs = instr_list_->GetList();
   printf("get line 10\n");
   std::unordered_map<assem::Instr*, graph::Node<assem::Instr>*> instr_node_map;

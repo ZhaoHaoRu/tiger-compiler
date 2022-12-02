@@ -66,9 +66,9 @@ void LiveGraphFactory::LiveMap() {
   int counter = 0;
   while(true) {
     auto flowgraph_node_list = flowgraph_->Nodes()->GetList();
-    for(auto it = flowgraph_node_list.rbegin(); it != flowgraph_node_list.rend(); ++it) {
-      auto node = *it;
-    // for(auto node : flowgraph_->Nodes()->GetList()) {
+    // for(auto it = flowgraph_node_list.rbegin(); it != flowgraph_node_list.rend(); ++it) {
+    //   auto node = *it;
+    for(auto node : flowgraph_->Nodes()->GetList()) {
       // printf("begin new round\n");
       temp::TempList *prev_in = in_->Look(node);
       temp::TempList *prev_out = out_->Look(node);
@@ -172,7 +172,10 @@ void LiveGraphFactory::InterfGraph() {
       // add edge between live out regs and defs
       // TODO: why not live_out and def's union?
       auto out_live_list = out_live->GetList();
-      for(auto live_reg : out_live_list) {
+      // XXX: add for exp
+      auto live_and_def_list = out_live->Union(def)->GetList();
+      // for(auto live_reg : out_live_list) {
+      for(auto live_reg : live_and_def_list) {
         for(auto def_reg : def_list) {
           if(live_reg == reg_manager->StackPointer() || def_reg == reg_manager->StackPointer()
               || live_reg == def_reg) {
@@ -202,16 +205,23 @@ void LiveGraphFactory::InterfGraph() {
           if(live_graph_.moves->Contain(use_reg_node, def_reg_node)) {
             continue;
           }
-          if(def_reg == reg_manager->StackPointer() || use_reg == reg_manager->StackPointer() || def_reg == use_reg) {
+
+          // TODO: I am not sure
+          if(def_reg == use_reg) {
             continue;
           }
+          // if(def_reg == reg_manager->StackPointer() || use_reg == reg_manager->StackPointer() || def_reg == use_reg) {
+          //   continue;
+          // }
 
           live_graph_.moves->Append(use_reg_node, def_reg_node);
         }
 
-        // add edge between def and live
+        // add edge between def and out live
         temp::TempList *live_sub_use = out_live->Diff(node->NodeInfo()->Use());
         auto live_sub_use_list = live_sub_use->GetList();
+
+
         for(auto live_reg : live_sub_use_list) {
           assert(live_reg != nullptr);
           if(live_reg == reg_manager->StackPointer()) {
@@ -222,6 +232,18 @@ void LiveGraphFactory::InterfGraph() {
 
           live_graph_.interf_graph->AddEdge(def_reg_node, live_reg_node);
           live_graph_.interf_graph->AddEdge(live_reg_node, def_reg_node);
+        }
+      }
+
+      // add egde bewteen def nodes
+      for(auto it = def_list.begin(); it != def_list.end(); ++it) {
+        for(auto other_it = std::next(it); other_it != def_list.end(); ++other_it) {
+          auto first_node = temp_node_map_->Look(*it);
+          auto second_node = temp_node_map_->Look(*other_it);
+          assert(first_node);
+          assert(second_node);
+          live_graph_.interf_graph->AddEdge(first_node, second_node);
+          live_graph_.interf_graph->AddEdge(second_node, first_node);
         }
       }
     }

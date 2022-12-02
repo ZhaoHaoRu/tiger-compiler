@@ -57,6 +57,7 @@ private:
   live::INodePtr GetAlias(live::INodePtr n);
   void AddWorkList(live::INodePtr u);
   bool OK(live::INodePtr t, live::INodePtr r);
+  bool AllOK(live::INodeListPtr list, live::INodePtr u);
   bool Conservertive(live::INodeListPtr node);
   void Combine(live::INodePtr u, live::INodePtr v);
   void FreezeMoves(live::INodePtr u);

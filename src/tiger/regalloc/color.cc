@@ -98,6 +98,17 @@ namespace col {
         return degrees[t] < col::PRECOLORED_COUNT || precolored_regs.count(t->NodeInfo()) || adj_set.count(new_pair);
     }
 
+    bool Color::AllOK(live::INodeListPtr list, live::INodePtr u) {
+        auto node_list = list->GetList();
+        bool result = true;
+        for(auto t : node_list) {
+            if(!OK(t, u)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     bool Color::Conservertive(live::INodeListPtr nodes) {
         int k = 0;
         auto node_list = nodes->GetList();
@@ -128,7 +139,6 @@ namespace col {
         move_list[u] = move_list[u]->Union(move_list[v]);
         printf("get line 121\n");
         // TODO: whether it is available?
-        
         live::INodeListPtr param_list = new live::INodeList();
         param_list->Append(v);
         EnableMoves(param_list);
@@ -379,12 +389,12 @@ namespace col {
 
         if(x == y) {
             printf("get line 369\n");
-            coalesce_moves->Append(new_pair.first, new_pair.second);
+            coalesce_moves->Append(m.first, m.second);
             AddWorkList(new_pair.first);
             printf("get line 372\n");
         } else if(precolored_regs.count(new_pair.second->NodeInfo()) || adj_set.count(new_pair)) {
             printf("get line 374\n");
-            constrained_moves->Append(new_pair.first, new_pair.second);
+            constrained_moves->Append(m.first, m.second);
             printf("get line 376\n");
             AddWorkList(new_pair.first);
             AddWorkList(new_pair.second);
@@ -443,6 +453,9 @@ namespace col {
         printf("generate okColors\n");
         std::set<int> ok_colors;
 
+        // TODO:
+        // use caller-save register as more as possible
+
         while(!select_stack->GetList().empty()) {
             // n = pop(SelectStack)
             auto n = select_stack->GetList().front();
@@ -468,7 +481,16 @@ namespace col {
                 spill_nodes->Append(n); // it is wrong in slides
             } else {
                 colored_nodes->Append(n);
+                int set_size = ok_colors.size();
+                int random = rand() % set_size;
+                int i = 0;
                 int c = *ok_colors.begin();
+                for(auto elem : ok_colors) {
+                    if(i >= random) {
+                        c = elem;
+                        break;
+                    }
+                }
                 color[n->NodeInfo()] = c;
             }
         }

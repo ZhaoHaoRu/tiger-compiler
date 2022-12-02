@@ -45,7 +45,7 @@ namespace ra {
             // TODO: how new temps use?
         }
         printf("begin merge moves\n");
-        MergeMoves();
+        // MergeMoves();
         printf("finish merge moves\n");
     }
 
