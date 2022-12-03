@@ -6,15 +6,12 @@ void FlowGraphFactory::AssemFlowGraph() {
   /* TODO: Put your lab6 code here */
   assert(instr_list_);
   auto instrs = instr_list_->GetList();
-  printf("get line 10\n");
   std::unordered_map<assem::Instr*, graph::Node<assem::Instr>*> instr_node_map;
   std::unordered_map<temp::Label*, graph::Node<assem::Instr>*> label_node_map;
   
   graph::Node<assem::Instr> *prev = nullptr;
-  printf("get line 15\n");
   for(auto instr : instrs) {
     assert(instr);
-    printf("the instr reach now: %s", instr->getAssem().c_str());
     graph::Node<assem::Instr> *cur = flowgraph_->NewNode(instr);
     instr_node_map[instr] = cur;
 
@@ -36,7 +33,6 @@ void FlowGraphFactory::AssemFlowGraph() {
   }
 
   // associate jump with jump target
-  printf("associate jump with jump target\n");
   for(auto instr : instrs) {
     assert(instr);
     if(typeid(*instr) == typeid(assem::OperInstr)) {

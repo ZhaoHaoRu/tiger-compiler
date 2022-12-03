@@ -56,33 +56,27 @@ MoveList *MoveList::Diff(MoveList *list) {
 void LiveGraphFactory::LiveMap() {
   /* TODO: Put your lab6 code here */
   int total_count = 0;
-  printf("get line 56\n");
   for(auto node : flowgraph_->Nodes()->GetList()) {
     in_->Enter(node, new temp::TempList());
     out_->Enter(node, new temp::TempList());
     ++total_count;
   }
-  printf("get line 68\n");
+  // printf("get line 68\n");
   int counter = 0;
   while(true) {
     auto flowgraph_node_list = flowgraph_->Nodes()->GetList();
-    // for(auto it = flowgraph_node_list.rbegin(); it != flowgraph_node_list.rend(); ++it) {
-    //   auto node = *it;
+
     for(auto node : flowgraph_->Nodes()->GetList()) {
-      // printf("begin new round\n");
       temp::TempList *prev_in = in_->Look(node);
       temp::TempList *prev_out = out_->Look(node);
       temp::TempList *use = node->NodeInfo()->Use();
       temp::TempList *def = node->NodeInfo()->Def();
 
       // out[n] - def[n]
-      // printf("get line 76\n");
       assert(prev_out);
       temp::TempList *mid = prev_out->Diff(def);
       // use[n] U (out[n] - def[n])
-      // printf("line 80 union, the instr: %s\n", node->NodeInfo()->getAssem().c_str());
       temp::TempList *new_in = mid->Union(use);
-      // printf("get line 82\n");
       in_->Set(node, new_in);
 
       // out[n] = U in[s]
@@ -92,10 +86,8 @@ void LiveGraphFactory::LiveMap() {
         temp::TempList *succ_in = in_->Look(succ);
 
         if(new_out == nullptr) {
-          // printf("line 90 union\n");
           new_out = succ_in->Union(prev_out);
         } else {
-          // printf("line 93 union\n");
           new_out = new_out->Union(succ_in);
         }
       }
@@ -106,12 +98,11 @@ void LiveGraphFactory::LiveMap() {
       out_->Set(node, new_out);
 
       // check whether reach fix point for this node
-      // printf("check whether reach fix point for this node\n");
       if(new_in && prev_in && new_out && prev_out && new_in->Equal(prev_in) && new_out->Equal(prev_out)) {
         ++counter;
       }
     }
-    // printf("get line 102\n");
+
     if(counter == total_count) {
       break;
     } else {
@@ -124,27 +115,25 @@ void LiveGraphFactory::InterfGraph() {
   /* TODO: Put your lab6 code here */
   // add the precolored register
   auto precolored_list = reg_manager->Registers()->GetList(); // skip rsp
-  printf("add the precolored register: %ld\n", precolored_list.size());
   for(auto temp : precolored_list) {
     live::INode *new_node = live_graph_.interf_graph->NewNode(temp);
     temp_node_map_->Enter(temp, new_node);
   }
 
   // add edges bewteen every precolored register pair
-  printf("add edges bewteen every precolored register pair, the precolored size: %ld\n", precolored_list.size());
   assert(!precolored_list.empty());
   for(auto it = precolored_list.begin(); it != precolored_list.end(); ++it) {
     for(auto other_it = std::next(it); other_it != precolored_list.end(); ++other_it) {
       // add for debug
       assert(temp_node_map_->Look(*it) != nullptr);
       assert(temp_node_map_->Look(*other_it) != nullptr);
+
       live_graph_.interf_graph->AddEdge(temp_node_map_->Look(*it), temp_node_map_->Look(*other_it));
       live_graph_.interf_graph->AddEdge(temp_node_map_->Look(*other_it), temp_node_map_->Look(*it));
     }
   }
 
   // add all node in flowgraph(not repeat and not rsp) to live graph
-  printf("add all node in flowgraph(not repeat and not rsp) to live graph\n");
   auto instr_node_list = flowgraph_->Nodes()->GetList();
   for(auto node : instr_node_list) {
     temp::TempList *node_temp_list = node->NodeInfo()->Def()->Union(node->NodeInfo()->Use());
@@ -161,7 +150,6 @@ void LiveGraphFactory::InterfGraph() {
   }
 
   // travel every instruction and add edge
-  printf("travel every instruction and add edge\n");
   for(auto node : instr_node_list) {
     assert(node != nullptr);
     temp::TempList *out_live = out_->Look(node);
@@ -170,12 +158,10 @@ void LiveGraphFactory::InterfGraph() {
 
     if(typeid(*node->NodeInfo()) != typeid(assem::MoveInstr)) {
       // add edge between live out regs and defs
-      // TODO: why not live_out and def's union?
       auto out_live_list = out_live->GetList();
-      // XXX: add for exp
-      auto live_and_def_list = out_live->Union(def)->GetList();
-      // for(auto live_reg : out_live_list) {
-      for(auto live_reg : live_and_def_list) {
+
+      for(auto live_reg : out_live_list) {
+      // for(auto live_reg : live_and_def_list) {
         for(auto def_reg : def_list) {
           if(live_reg == reg_manager->StackPointer() || def_reg == reg_manager->StackPointer()
               || live_reg == def_reg) {
@@ -206,13 +192,9 @@ void LiveGraphFactory::InterfGraph() {
             continue;
           }
 
-          // TODO: I am not sure
-          if(def_reg == use_reg) {
+          if(def_reg == reg_manager->StackPointer() || use_reg == reg_manager->StackPointer() || def_reg == use_reg) {
             continue;
           }
-          // if(def_reg == reg_manager->StackPointer() || use_reg == reg_manager->StackPointer() || def_reg == use_reg) {
-          //   continue;
-          // }
 
           live_graph_.moves->Append(use_reg_node, def_reg_node);
         }
@@ -221,12 +203,12 @@ void LiveGraphFactory::InterfGraph() {
         temp::TempList *live_sub_use = out_live->Diff(node->NodeInfo()->Use());
         auto live_sub_use_list = live_sub_use->GetList();
 
-
         for(auto live_reg : live_sub_use_list) {
           assert(live_reg != nullptr);
-          if(live_reg == reg_manager->StackPointer()) {
+          if(live_reg == reg_manager->StackPointer() || def_reg == reg_manager->StackPointer() || def_reg == live_reg) {
             continue;
           }
+
           auto live_reg_node = temp_node_map_->Look(live_reg);
           assert(live_reg_node != nullptr);
 
@@ -234,20 +216,7 @@ void LiveGraphFactory::InterfGraph() {
           live_graph_.interf_graph->AddEdge(live_reg_node, def_reg_node);
         }
       }
-
-      // add egde bewteen def nodes
-      for(auto it = def_list.begin(); it != def_list.end(); ++it) {
-        for(auto other_it = std::next(it); other_it != def_list.end(); ++other_it) {
-          auto first_node = temp_node_map_->Look(*it);
-          auto second_node = temp_node_map_->Look(*other_it);
-          assert(first_node);
-          assert(second_node);
-          live_graph_.interf_graph->AddEdge(first_node, second_node);
-          live_graph_.interf_graph->AddEdge(second_node, first_node);
-        }
-      }
     }
-    // TODO: the change of live?
   }
 }
 

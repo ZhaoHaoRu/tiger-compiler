@@ -431,7 +431,6 @@ temp::Temp *CallExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
   temp::Temp *static_link_reg = static_link->Munch(instr_list, fs);
 
   int after_size = args_->GetList().size();
-  printf("the func name: %s, the arg count: %d \n", static_cast<tree::NameExp*>(fun_)->name_->Name().c_str(), after_size);
   assert(after_size == size - 1);
   auto src_arg_reg_list = args_->MunchArgs(instr_list, fs);
 
@@ -443,8 +442,8 @@ temp::Temp *CallExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
 
   // call the function, and move the arguments to the arg-registers
   assem = "callq " + static_cast<tree::NameExp*>(fun_)->name_->Name();
-
-  instr_list.Append(new assem::OperInstr(assem, reg_manager->ArgRegs(), src_arg_reg_list, nullptr));
+  // XXX: why callersave, I am still a little confused
+  instr_list.Append(new assem::OperInstr(assem, reg_manager->CallerSaves(), src_arg_reg_list, nullptr));
 
   // move the function return value to res_reg
   assem = "movq `s0, `d0";
@@ -483,10 +482,8 @@ temp::TempList *ExpList::MunchArgs(assem::InstrList &instr_list, std::string_vie
   for(auto &exp : exp_list_) {
     temp::Temp *ret_reg = exp->Munch(instr_list, fs);
     if(i < arg_reg_size) {
-      // move the argument to specific register 
+      // move the argument to specific reg register 
       assem = "movq `s0, `d0";
-      // TODO: for debug
-      printf("the ret_reg value: %d\n", ret_reg->Int());
 
       instr_list.Append(new assem::MoveInstr(assem, new temp::TempList({*it}), new temp::TempList({ret_reg})));
 

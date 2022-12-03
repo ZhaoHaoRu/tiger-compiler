@@ -7,11 +7,10 @@ namespace col {
 /*-------------------------- auxiliary functions ----------------------------------*/
     live::INodeListPtr Color::Adjacent(live::INodePtr n) {
         assert(n);
-        printf("adjacent node count: %d\n", n->NodeInfo()->Int());
         assert(adj_list.count(n));
         live::INodeListPtr node_list = adj_list[n];
 
-        // calculate adjList[n] \ selectStack U coalescedNodes
+        // calculate adjList[n] \ (selectStack U coalescedNodes)
         return node_list->Diff(select_stack->Union(coalesced_nodes));
     }
 
@@ -42,7 +41,6 @@ namespace col {
         int d = degrees[m];
         degrees[m] = d - 1;
         if(d == col::PRECOLORED_COUNT) {
-            printf("decrement adjacent\n");
             live::INodeListPtr adj_nodes = Adjacent(m);
             adj_nodes->Append(m);
             EnableMoves(adj_nodes);
@@ -83,7 +81,7 @@ namespace col {
     }
 
     void Color::AddWorkList(live::INodePtr u) {
-        assert(u != nullptr);
+        assert(u);
         if(!precolored_regs.count(u->NodeInfo()) && !MoveRelated(u) && degrees[u] < col::PRECOLORED_COUNT) {
             freeze_worklist->DeleteNode(u);
             simplify_worklist->Append(u);
@@ -130,33 +128,28 @@ namespace col {
         } else {
             spill_worklist->DeleteNode(v);
         }
-        printf("get line 117\n");
+      
         coalesced_nodes->Append(v);
         alias[v] = u;
 
         assert(move_list.count(v));
         assert(move_list.count(u));
         move_list[u] = move_list[u]->Union(move_list[v]);
-        printf("get line 121\n");
-        // TODO: whether it is available?
+    
         live::INodeListPtr param_list = new live::INodeList();
         param_list->Append(v);
         EnableMoves(param_list);
         delete param_list;
 
-        printf("get line 124\n");
-        printf("combine adjacent\n");
         auto adj_list = Adjacent(v)->GetList();
         for(auto t : adj_list) {
             AddEdge(t, u);
             Decrement(t);
         }
-        printf("get line 131\n");
         if(degrees[u] >= PRECOLORED_COUNT && freeze_worklist->Contain(u)) {
             freeze_worklist->DeleteNode(u);
             spill_worklist->Append(u);
         }
-        printf("get line 136\n");
     }
 
     void Color::FreezeMoves(live::INodePtr u) {
@@ -192,6 +185,7 @@ namespace col {
             }
             ok_colors.insert(i);
         }
+
     }
 
 /*-------------------------- public color functions ----------------------------------*/
@@ -202,7 +196,7 @@ namespace col {
         temp::TempList *regs = reg_manager->Registers();
         auto reg_list = regs->GetList();
         for(auto reg : reg_list) {
-            printf("the precolored: %d\n", reg->Int());
+            // printf("the precolored: %d\n", reg->Int());
             precolored_regs.insert(reg);
         }
 
@@ -239,7 +233,7 @@ namespace col {
     }
 
     void Color::Build() {
-        // TODO: need to do initalize work
+        // need to do initalize work
         auto node_list = live_graph_.interf_graph->Nodes()->GetList();
         auto liveness_move_list = live_graph_.moves->GetList();
 
@@ -301,7 +295,7 @@ namespace col {
             adj_set.insert(node_pair);
             adj_set.insert(reverse_node_pair);
 
-            // FIXME: ignore precolored in make worklist
+            // ignore precolored in make worklist
             if(!precolored_regs.count(u->NodeInfo())) {
                 adj_list[u]->Append(v);
                 degrees[u] += 1;
@@ -336,7 +330,6 @@ namespace col {
         auto node = simlify_worklist_nodes.front();
         select_stack->Prepend(node);    // simulate the stack
         
-        printf("simpilify adjacent\n");
         live::INodeListPtr adj_nodes = Adjacent(node);
         auto adj_nodes_list = adj_nodes->GetList();
         for(auto adj_node : adj_nodes_list) {
@@ -344,7 +337,6 @@ namespace col {
         }
         assert(node);
         simplify_worklist->DeleteNode(node);
-        printf("finish simplify\n");
     }
 
     void Color::Coalesce() {
@@ -362,14 +354,12 @@ namespace col {
             new_pair.second = y;
         }
 
-        // TODO: add for debug
         assert(new_pair.second != nullptr); 
         worklist_moves->Delete(m.first, m.second);
 
         // George
         bool satisfy_george = false;
         if(precolored_regs.count(new_pair.first->NodeInfo()) && !precolored_regs.count(new_pair.second->NodeInfo())) {
-            printf("george adjacent\n");
             auto adj_list = Adjacent(new_pair.second)->GetList();
             for(auto t : adj_list) {
                 if(!OK(t, new_pair.first)) {
@@ -383,35 +373,23 @@ namespace col {
         // briggs
         bool satisfy_briggs = false;
         if(!precolored_regs.count(new_pair.second->NodeInfo()) && !precolored_regs.count(new_pair.first->NodeInfo())) {
-            printf("briggs\n");
             satisfy_briggs = Conservertive(Adjacent(new_pair.first)->Union(Adjacent(new_pair.second)));
         }
 
         if(x == y) {
-            printf("get line 369\n");
             coalesce_moves->Append(m.first, m.second);
             AddWorkList(new_pair.first);
-            printf("get line 372\n");
         } else if(precolored_regs.count(new_pair.second->NodeInfo()) || adj_set.count(new_pair)) {
-            printf("get line 374\n");
             constrained_moves->Append(m.first, m.second);
-            printf("get line 376\n");
             AddWorkList(new_pair.first);
             AddWorkList(new_pair.second);
-            printf("get line 378\n");
         } else if((precolored_regs.count(new_pair.first->NodeInfo()) && satisfy_george) || (!precolored_regs.count(new_pair.first->NodeInfo()) && satisfy_briggs)) {
-            printf("get line 381\n");
             coalesce_moves->Append(m.first, m.second);
-            printf("get line 383\n");
             Combine(new_pair.first, new_pair.second);
-            printf("get line 385\n");
             AddWorkList(new_pair.first);
-            printf("get line 387\n");
         } else {
-            printf("get line 388\n");
             active_moves->Append(m.first, m.second);
         }
-        printf("finish Coalesce\n");
     }
 
     void Color::Freeze() {
@@ -429,7 +407,6 @@ namespace col {
         int max_degree = 0;
         live::INodePtr m = nullptr;
         for(auto node : spill_worklist_nodes) {
-            // TODO: maybe need to add more constrains
             assert(degrees.count(node));
             if(degrees[node] > max_degree) {
                 max_degree = degrees[node];
@@ -450,11 +427,10 @@ namespace col {
 
     void Color::AssignColor() {
         // generate okColors
-        printf("generate okColors\n");
         std::set<int> ok_colors;
 
-        // TODO:
         // use caller-save register as more as possible
+        temp::TempList *caller_saves = reg_manager->CallerSaves();
 
         while(!select_stack->GetList().empty()) {
             // n = pop(SelectStack)
@@ -465,6 +441,7 @@ namespace col {
 
             assert(adj_list.count(n));
             auto adj_list_nodes = adj_list[n]->GetList();
+            bool is_self = false;
             for(auto w : adj_list_nodes) {
                 assert(w);
                 auto this_alias = GetAlias(w);
@@ -473,7 +450,7 @@ namespace col {
                     int alias_color = color[this_alias->NodeInfo()];
                     assert(alias_color >= 0);
                     assert(alias_color <= PRECOLORED_COUNT);
-                    ok_colors.erase(color[this_alias->NodeInfo()]);
+                    ok_colors.erase(alias_color);
                 }
             }
 
@@ -482,11 +459,13 @@ namespace col {
             } else {
                 colored_nodes->Append(n);
                 int set_size = ok_colors.size();
-                int random = rand() % set_size;
-                int i = 0;
                 int c = *ok_colors.begin();
+                bool find = false;
+                temp::Temp *according_temp;
                 for(auto elem : ok_colors) {
-                    if(i >= random) {
+                    according_temp = reg_manager->NthRegister(elem);
+                    assert(according_temp != nullptr);
+                    if(caller_saves->Contain(according_temp)) {
                         c = elem;
                         break;
                     }
@@ -499,7 +478,6 @@ namespace col {
         auto coalesced_nodes_list = coalesced_nodes->GetList();
         for(auto node : coalesced_nodes_list) {
             auto this_alias = GetAlias(node);
-            // printf("the alias: %d", this_alias->NodeInfo()->Int());
             assert(color.count(this_alias->NodeInfo()));
             color[node->NodeInfo()] = color[this_alias->NodeInfo()];
         }
@@ -510,16 +488,12 @@ namespace col {
         MakeWorkList();
         do {
             if(!simplify_worklist->GetList().empty()) {
-                printf("simplify\n");
                 Simplify();
             } else if(!worklist_moves->GetList().empty()) {
-                printf("caolesce\n");
                 Coalesce();
             } else if(!freeze_worklist->GetList().empty()) {
-                printf("freeze\n");
                 Freeze();
             } else if(!spill_worklist->GetList().empty()) {
-                printf("selectspill\n");
                 SelectSpill();
             }
         } while(!simplify_worklist->GetList().empty() || !worklist_moves->GetList().empty()
@@ -535,7 +509,6 @@ namespace col {
 
         color_result.spills = new live::INodeList();
         color_result.spills->CatList(spill_nodes);
-        printf("finish color main\n");
     }
 
     col::Result Color::getResult() {
