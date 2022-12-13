@@ -66,6 +66,9 @@ static std::string Format(std::string_view assem, temp::TempList *dst,
 
 void OperInstr::Print(FILE *out, temp::Map *m) const {
   std::string result = Format(assem_, dst_, src_, jumps_, m);
+  if(result == "addq t130, t131") {
+    int q = 0;
+  }
   fprintf(out, "%s\n", result.data());
 }
 
@@ -97,4 +100,44 @@ void InstrList::Print(FILE *out, temp::Map *m) const {
   fprintf(out, "\n");
 }
 
+/*---------------------------- supply --------------------------*/
+void OperInstr::ReplaceDef(temp::Temp *old_temp, temp::Temp *new_temp) {
+  if(dst_ != nullptr) {
+    // TODO: add for debug
+    auto old_dst = new temp::TempList();
+    for(auto temp : dst_->GetList()) {
+      old_dst->Append(temp);
+    }
+
+    dst_ = dst_->ReplaceTemp(old_temp, new_temp);
+    assert(dst_->Equal(old_dst) == false);
+    delete old_dst;
+  }
+}
+
+void OperInstr::ReplaceUse(temp::Temp *old_temp, temp::Temp *new_temp) {
+  if(src_ != nullptr) {
+    // TODO: add for debug
+    auto old_src = new temp::TempList();
+    for(auto temp : src_->GetList()) {
+      old_src->Append(temp);
+    }
+
+    src_ = src_->ReplaceTemp(old_temp, new_temp);
+    assert(src_->Equal(old_src) == false);
+    delete old_src;
+  }
+}
+
+void MoveInstr::ReplaceDef(temp::Temp *old_temp, temp::Temp *new_temp) {
+  if(dst_ != nullptr) {
+    dst_ = dst_->ReplaceTemp(old_temp, new_temp);
+  }
+}
+
+void MoveInstr::ReplaceUse(temp::Temp *old_temp, temp::Temp *new_temp) {
+  if(src_ != nullptr) {
+    src_ = src_->ReplaceTemp(old_temp, new_temp);
+  }
+}
 } // namespace assem

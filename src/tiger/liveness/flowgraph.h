@@ -5,6 +5,8 @@
 #include "tiger/frame/frame.h"
 #include "tiger/frame/temp.h"
 #include "tiger/util/graph.h"
+#include <unordered_map>
+#include <cassert>
 
 namespace fg {
 

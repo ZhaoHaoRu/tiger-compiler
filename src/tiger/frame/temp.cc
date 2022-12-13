@@ -81,4 +81,78 @@ void Map::DumpMap(FILE *out) {
   }
 }
 
+bool TempList::Contain(Temp *new_temp) {
+  assert(new_temp != nullptr);
+  for(auto temp : temp_list_) {
+    if(temp->Int() == new_temp->Int()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+TempList *TempList::Union(TempList *new_temp_list) {
+  auto res = new TempList();
+  // printf("get line 96");
+  for(auto temp : temp_list_) {
+    res->Append(temp);
+  }
+  // printf("get line 99");
+  if(new_temp_list) {
+    // printf("get line 101");
+    auto temps = new_temp_list->GetList();
+    // printf("get line 102");
+    for(auto temp : temps) {
+      // printf("get line 103");
+      if(!res->Contain(temp)) {
+        res->Append(temp);
+      }
+    }
+  }
+  
+  return res;
+}
+
+TempList *TempList::Diff(TempList *new_temp_list) {
+  auto res = new TempList();
+  for(auto temp : temp_list_) {
+    if(!new_temp_list->Contain(temp)) {
+      res->Append(temp);
+    }
+  }
+  return res;
+}
+
+bool TempList::Equal(TempList *new_temp_list) {
+  auto another_temp_list = new_temp_list->GetList();
+
+  if(temp_list_.size() != another_temp_list.size()) {
+    return false;
+  }
+
+  // printf("get equal line 133\n");
+  auto it1 = temp_list_.begin();
+  auto it2 = another_temp_list.begin();
+  // printf("get equal line 136\n");
+
+  for(auto elem : temp_list_) {
+    if(!new_temp_list->Contain(elem)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+TempList *TempList::ReplaceTemp(temp::Temp *old_temp, temp::Temp *new_temp) {
+  temp::TempList *new_templist = new temp::TempList();
+  for(auto &temp : temp_list_) {
+    if(temp == old_temp) {
+      new_templist->Append(new_temp);
+    } else {
+      new_templist->Append(temp);
+    }
+  }
+  return new_templist;
+}
+
 } // namespace temp

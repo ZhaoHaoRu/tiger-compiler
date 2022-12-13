@@ -19,8 +19,11 @@ public:
 class Instr {
 public:
   virtual ~Instr() = default;
-
+  // TODO: add this for debug
+  virtual std::string getAssem() = 0;
   virtual void Print(FILE *out, temp::Map *m) const = 0;
+  virtual void ReplaceDef(temp::Temp *old_temp, temp::Temp *new_temp) = 0;
+  virtual void ReplaceUse(temp::Temp *old_temp, temp::Temp *new_temp) = 0;
   [[nodiscard]] virtual temp::TempList *Def() const = 0;
   [[nodiscard]] virtual temp::TempList *Use() const = 0;
 };
@@ -35,7 +38,10 @@ public:
             Targets *jumps)
       : assem_(std::move(assem)), dst_(dst), src_(src), jumps_(jumps) {}
 
+  std::string getAssem() override {return assem_; }
   void Print(FILE *out, temp::Map *m) const override;
+  void ReplaceDef(temp::Temp *old_temp, temp::Temp *new_temp) override;
+  void ReplaceUse(temp::Temp *old_temp, temp::Temp *new_temp) override;
   [[nodiscard]] temp::TempList *Def() const override;
   [[nodiscard]] temp::TempList *Use() const override;
 };
@@ -48,7 +54,10 @@ public:
   LabelInstr(std::string assem, temp::Label *label)
       : assem_(std::move(assem)), label_(label) {}
 
+  std::string getAssem() override {return assem_; }
   void Print(FILE *out, temp::Map *m) const override;
+  void ReplaceDef(temp::Temp *old_temp, temp::Temp *new_temp) override {return;}
+  void ReplaceUse(temp::Temp *old_temp, temp::Temp *new_temp) override {return;}
   [[nodiscard]] temp::TempList *Def() const override;
   [[nodiscard]] temp::TempList *Use() const override;
 };
@@ -61,7 +70,10 @@ public:
   MoveInstr(std::string assem, temp::TempList *dst, temp::TempList *src)
       : assem_(std::move(assem)), dst_(dst), src_(src) {}
 
+  std::string getAssem() override {return assem_; }
   void Print(FILE *out, temp::Map *m) const override;
+  void ReplaceDef(temp::Temp *old_temp, temp::Temp *new_temp) override;
+  void ReplaceUse(temp::Temp *old_temp, temp::Temp *new_temp) override;
   [[nodiscard]] temp::TempList *Def() const override;
   [[nodiscard]] temp::TempList *Use() const override;
 };
@@ -71,6 +83,7 @@ public:
   InstrList() = default;
 
   void Print(FILE *out, temp::Map *m) const;
+  void setContent(std::list<Instr *> &instrs) {instr_list_ = instrs; }
   void Append(assem::Instr *instr) { instr_list_.push_back(instr); }
   void Remove(assem::Instr *instr) { instr_list_.remove(instr); }
   void Insert(std::list<Instr *>::const_iterator pos, assem::Instr *instr) {

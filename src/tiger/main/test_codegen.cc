@@ -39,6 +39,7 @@ int main(int argc, char **argv) {
       // Lab 4: semantic analysis
       TigerLog("-------====Semantic analysis=====-----\n");
       sem::ProgSem prog_sem(std::move(absyn_tree), std::move(errormsg));
+      // TODO: don't consider type checking now 
       prog_sem.SemAnalyze();
       absyn_tree = prog_sem.TransferAbsynTree();
       errormsg = prog_sem.TransferErrormsg();

@@ -53,12 +53,12 @@ void ProcFrag::OutputAssem(FILE *out, OutputPhase phase, bool need_ra) const {
     // Group list into basic blocks
     TigerLog("------====Basic block_=====-------\n");
     canon::StmListList *stm_lists = canon.BasicBlocks();
-    TigerLog(stm_lists);
+    // TigerLog(stm_lists);
 
     // Order basic blocks into traces_
     TigerLog("-------====Trace=====-----\n");
     tree::StmList *stm_traces = canon.TraceSchedule();
-    TigerLog(stm_traces);
+    // TigerLog(stm_traces);
 
     traces = canon.TransferTraces();
   }
@@ -70,7 +70,7 @@ void ProcFrag::OutputAssem(FILE *out, OutputPhase phase, bool need_ra) const {
     cg::CodeGen code_gen(frame_, std::move(traces));
     code_gen.Codegen();
     assem_instr = code_gen.TransferAssemInstr();
-    TigerLog(assem_instr.get(), color);
+    // TigerLog(assem_instr.get(), color);
   }
 
   assem::InstrList *il = assem_instr.get()->GetInstrList();
@@ -85,8 +85,9 @@ void ProcFrag::OutputAssem(FILE *out, OutputPhase phase, bool need_ra) const {
     color = temp::Map::LayerMap(reg_manager->temp_map_, allocation->coloring_);
   }
 
+  ///@note change for me
   TigerLog("-------====Output assembly for %s=====-----\n",
-           frame_->name_->Name().data());
+           frame_->label_->Name().data());  
 
   assem::Proc *proc = frame::ProcEntryExit3(frame_, il);
   

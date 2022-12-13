@@ -23,11 +23,27 @@ public:
   Result(Result &&result) = delete;
   Result &operator=(const Result &result) = delete;
   Result &operator=(Result &&result) = delete;
-  ~Result();
+  ~Result(){};
 };
 
 class RegAllocator {
   /* TODO: Put your lab6 code here */
+private:
+  frame::Frame *frame_;
+  cg::AssemInstr* instr_list_;
+  std::list<temp::Temp*> new_temps; // new add temps after rewrite
+  temp::Map *coloring;
+  live::INodeListPtr spills;
+
+public:
+  RegAllocator(frame::Frame *frame, std::unique_ptr<cg::AssemInstr> instr_list): frame_(frame),
+    instr_list_(new cg::AssemInstr(instr_list->GetInstrList())), spills(new live::INodeList()), coloring(nullptr){}
+  
+  void RegAlloc();
+  void MergeMoves();
+  assem::InstrList* RewriteProgram(std::list<temp::Temp*> &new_temps);
+  std::unique_ptr<ra::Result> TransferResult();
+  // TODO: need to supply deconstruct function
 };
 
 } // namespace ra
