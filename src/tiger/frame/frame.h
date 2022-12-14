@@ -67,11 +67,13 @@ public:
   [[nodiscard]] virtual temp::Temp *ReturnValue() = 0;
 
   /**
-   * add this
+   * add these
    */ 
   [[nodiscard]] virtual temp::Temp *NthRegister(int n) = 0;
 
   [[nodiscard]] virtual std::string *NthRegisterName(int n) = 0;
+
+  [[nodiscard]] virtual std::string *GetRegisterName(temp::Temp *temp) = 0;
 
   temp::Map *temp_map_;
 protected:

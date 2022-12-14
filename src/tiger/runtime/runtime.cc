@@ -44,10 +44,18 @@ EXTERNC uint64_t MaxFree() {
 EXTERNC long *init_array(int size, long init) {
   int i;
   uint64_t allocate_size = size * sizeof(long);
-  long *a = (long *)tiger_heap->Allocate(allocate_size);
+
+  // XXX:?
+  uint64_t *sp;
+  GET_RBP(sp);
+  sp += 2;
+
+  long *a = (long *)tiger_heap->AllocateArray(allocate_size, sp);
+  // long *a = (long *)tiger_heap->Allocate(allocate_size);
   if(!a) {
     tiger_heap->GC();
-    a = (long*)tiger_heap->Allocate(allocate_size);
+    a = (long *)tiger_heap->AllocateArray(allocate_size, sp);
+    // a = (long*)tiger_heap->Allocate(allocate_size);
   }
   for (i = 0; i < size; i++) a[i] = init;
   return a;
@@ -58,13 +66,20 @@ struct string {
   unsigned char chars[1];
 };
 
-EXTERNC int *alloc_record(int size) {
+EXTERNC int *alloc_record(int size, std::string descriptor) {
   int i;
   int *p, *a;
-  p = a = (int *)tiger_heap->Allocate(size);
+
+  uint64_t *sp;
+  GET_RBP(sp);
+  sp += 2;
+
+  p = a = (int *)tiger_heap->AllocateRecord(size, descriptor, sp);
+  // p = a = (int *)tiger_heap->Allocate(size);
   if(!p) {
     tiger_heap->GC();
-    p = a = (int *)tiger_heap->Allocate(size);
+    p = a = (int *)tiger_heap->AllocateRecord(size, descriptor, sp);
+    // p = a = (int *)tiger_heap->Allocate(size);
   }
   for (i = 0; i < size; i += sizeof(int)) *p++ = 0;
   return a;

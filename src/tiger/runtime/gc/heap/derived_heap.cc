@@ -72,5 +72,38 @@ namespace gc {
 
         return FindBestfit(size);
     }
+
+    char *DerivedHeap::AllocateRecord(uint64_t size, std::string descriptor, uint64_t *sp) {
+        char *start_pos = Allocate(size);
+        if (!start_pos) {
+            return nullptr;
+        }
+
+        // TODO: what stack pointer do?
+        stack_pointer_ = sp;
+
+        RecordInfo new_record_info;
+        new_record_info.start_pos = start_pos;
+        new_record_info.record_size = size;
+        new_record_info.descriptor = descriptor;
+        new_record_info.descriptor_size = descriptor.size();
+        records_info.emplace_back(new_record_info);
+        return start_pos;
+    }
+
+    char *DerivedHeap::AllocateArray(uint64_t size, uint64_t *sp) {
+        char *start_pos = Allocate(size);
+        if (!start_pos) {
+            return nullptr;
+        }
+
+        stack_pointer_ = sp;
+
+        ArrayInfo new_array_info;
+        new_array_info.start_pos = start_pos;
+        new_array_info.array_size = size;
+        arrays_info.emplace_back(new_array_info);
+        return start_pos;
+    }
 } // namespace gc
 

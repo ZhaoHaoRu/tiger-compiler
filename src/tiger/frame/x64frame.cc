@@ -192,6 +192,10 @@ std::string *X64RegManager::NthRegisterName(int n) {
   return result;
 }
 
+std::string *X64RegManager::GetRegisterName(temp::Temp *temp) {
+  return temp_map_->Look(temp);
+}
+
 /* TODO: Put your lab5 code here */
 X64Frame::X64Frame(temp::Label *name, std::list<bool> formals){
   // initialize

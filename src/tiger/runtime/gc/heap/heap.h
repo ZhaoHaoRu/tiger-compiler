@@ -31,11 +31,15 @@ public:
   virtual char *Allocate(uint64_t size) = 0;
 
   /**
-   * Allocate array, expand allocate
-   * 
+   * Allocate record, expand allocate
    */
-  virtual char *AllocateArray()
+  virtual char *AllocateRecord(uint64_t size, std::string descriptor, uint64_t *sp) = 0;
 
+  /**
+   * Allocate array, expand allocate
+   */
+  virtual char *AllocateArray(uint64_t size, uint64_t *sp) = 0;
+  
   /**
    * Acquire the total allocated space from heap.
    * Hint: If you implement a contigous heap, you could simply calculate the distance between top and bottom,

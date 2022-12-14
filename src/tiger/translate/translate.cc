@@ -500,10 +500,16 @@ tr::ExpAndTy *RecordExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
 
   // translate every field in the field list
   std::list<EField *> field_list = fields_->GetList();
+  std::string tag_str(field_list.size(), '0');
+  int pos = 0;
   for(auto field : field_list) {
     tr::ExpAndTy *ret = field->exp_->Translate(venv, tenv, level, label, errormsg);
     assert(ret != nullptr);
+    if (typeid(*ret->ty_->ActualTy()) == typeid(type::RecordTy) || typeid(*ret->ty_->ActualTy()) == typeid(type::ArrayTy)) {
+      tag_str[pos] = '1';
+    }
     exp_list->Append(ret->exp_->UnEx());
+    ++pos;
   }
 
   // alloc a space to store the pointer
@@ -514,6 +520,17 @@ tr::ExpAndTy *RecordExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   auto static_link = StaticLink(level, level);
   args->Append(static_link);
   args->Append(new tree::ConstExp(reg_manager->WordSize() * field_list.size()));
+
+  // add a additional parameter: the size and type
+  tree::ExpList *record_args = new tree::ExpList();
+
+  // Simply help Garbage collector distinguish record and array and get the size of array would be OK
+  ///@note add for lab7, descriptor for record
+  // FIXME: no StringExp here, so use NameExp first?
+  args->Append(
+    new tree::NameExp(temp::LabelFactory::NamedLabel(tag_str))
+  );
+  
   tree::Stm *stm = new tree::MoveStm(new tree::TempExp(head), frame::ExternalCall("alloc_record", args));
 
   // handle the records, move to heap

@@ -40,6 +40,8 @@ public:
   [[nodiscard]] temp::Temp *NthRegister(int n) override;
 
   [[nodiscard]] std::string *NthRegisterName(int n) override;
+
+  [[nodiscard]] std::string *GetRegisterName(temp::Temp *temp) override;
 };
 
 
