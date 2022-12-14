@@ -26,7 +26,6 @@ private:
   assem::InstrList *il_;
   frame::Frame *frame_;
   fg::FGraphPtr flowgraph_;
-  live::LiveGraph livegraph_;
   std::vector<int> escape_var_;
   temp::Map *color_;
   ///@note address_in and address_out, whether it is necessary?
@@ -39,14 +38,15 @@ private:
   void CheckDefAndUse(assem::Instr *instr, int &def, int &use, bool &found_def, bool &found_use);
    
 public:
-  Roots(assem::InstrList *il, frame::Frame *frame, fg::FGraphPtr fg, live::LiveGraph livegraph, std::vector<int> escapes, temp::Map *color):
-    il_(il), frame_(frame), flowgraph_(fg), livegraph_(livegraph), escape_var_(escapes), color_(color) {}
+  Roots(assem::InstrList *il, frame::Frame *frame, fg::FGraphPtr fg, std::vector<int> escapes, temp::Map *color):
+    il_(il), frame_(frame), flowgraph_(fg), escape_var_(escapes), color_(color) {}
   
   void AddressLiveness();
   void TempLiveness();
   void HandleCallRelatedPointer();
   void RewriteProgram();
   std::vector<PointerMap> generatePointerMap();
+  assem::InstrList *getInstrList();
 };
 
 
@@ -252,7 +252,7 @@ std::vector<PointerMap> Roots::generatePointerMap() {
     new_map.frame_size = frame_name + "_framesize";
     assert(typeid(*elem.first) == typeid(assem::LabelInstr));
     new_map.return_label = static_cast<assem::LabelInstr*>(elem.first)->label_->Name();
-    new_map.label = "Lmap " + new_map.return_label;
+    new_map.label = "Lmap_" + new_map.return_label;
 
     new_map.is_main = is_main;
 
@@ -271,6 +271,12 @@ std::vector<PointerMap> Roots::generatePointerMap() {
   }
 
   result[n - 1].next_label = "END";
+  return result;
+}
+
+
+assem::InstrList *Roots::getInstrList() {
+  return il_;
 }
 
 }
