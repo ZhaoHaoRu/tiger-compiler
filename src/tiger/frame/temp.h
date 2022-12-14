@@ -25,9 +25,12 @@ class Temp {
 
 public:
   [[nodiscard]] int Int() const;
+  ///@note add for lab7
+  bool store_pointer_{false};
 
 private:
   int num_;
+  
   explicit Temp(int num) : num_(num) {}
 };
 

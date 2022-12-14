@@ -31,6 +31,12 @@ public:
   virtual char *Allocate(uint64_t size) = 0;
 
   /**
+   * Allocate array, expand allocate
+   * 
+   */
+  virtual char *AllocateArray()
+
+  /**
    * Acquire the total allocated space from heap.
    * Hint: If you implement a contigous heap, you could simply calculate the distance between top and bottom,
    * but if you implement in a link-list way, you may need to sum the whole free list and calculate the total free space.

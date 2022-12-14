@@ -5,6 +5,7 @@
 #include "tiger/codegen/assem.h"
 #include "tiger/frame/x64frame.h"
 #include "tiger/translate/tree.h"
+#include <algorithm>
 
 // Forward Declarations
 namespace frame {

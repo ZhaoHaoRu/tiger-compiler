@@ -54,7 +54,14 @@ namespace ra {
 
         for(auto spill_node : spill_node_list) {
             temp::Temp *spill_temp = spill_node->NodeInfo();
-            frame_->s_offset -= wordsize;
+            // frame_->s_offset -= wordsize;
+            frame::Access *new_frame_access = frame_->AllocLocal(true);
+
+            ///@note add for GC
+            bool is_store_pointer = spill_node->NodeInfo()->store_pointer_;
+            if (is_store_pointer) {
+                new_frame_access->SetStorePointer();
+            }
 
             for(auto instr : prev_instr_list) {
                 dst = instr->Def();
@@ -67,6 +74,11 @@ namespace ra {
                     assem = "movq (" + frame_->label_->Name() + "_framesize" + std::to_string(frame_->s_offset) 
                             + ")(`s0), `d0";
                     temp::Temp *new_temp = temp::TempFactory::NewTemp();
+
+                    ///@note add for GC
+                    if (is_store_pointer) {
+                        new_temp->store_pointer_ = true;
+                    }
                     assem::Instr *new_instr = new assem::OperInstr(assem, new temp::TempList({new_temp}), new temp::TempList({rsp}), nullptr);
                     
                     tmp_instr_list.push_back(new_instr);
@@ -82,6 +94,12 @@ namespace ra {
                     def_change = true;
                     // store
                     temp::Temp *new_temp = temp::TempFactory::NewTemp();
+
+                    ///@note add for GC
+                    if (is_store_pointer) {
+                        new_temp->store_pointer_ = true;
+                    }
+                    
                     assem = "movq `s0, (" + frame_->label_->Name() + "_framesize" + std::to_string(frame_->s_offset) 
                         + ")(`d0)";
                     assem::Instr *new_instr = new assem::OperInstr(assem, new temp::TempList({rsp}), new temp::TempList({new_temp}), nullptr);
@@ -107,7 +125,6 @@ namespace ra {
         // generate the InstrList
         new_instrs->setContent(prev_instr_list);
         return new_instrs;
-        
     }
 
     void RegAllocator::MergeMoves() {

@@ -83,6 +83,8 @@ public:
   /* TODO: Put your lab5 code here */
   enum Kind {IN_REG, IN_FRAME};
   Kind kind_;
+  ///@note add for lab7
+  bool store_pointer_{false};
 
   Access(Kind kind): kind_(kind) {}
 
@@ -90,6 +92,7 @@ public:
 
   virtual ~Access() = default;
   
+  virtual void SetStorePointer() = 0;
 };
 
 class Frame {

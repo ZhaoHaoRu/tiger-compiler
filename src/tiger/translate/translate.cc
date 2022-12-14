@@ -10,6 +10,7 @@
 
 extern frame::Frags *frags;
 extern frame::RegManager *reg_manager;
+std::vector<std::string> return_pointer_functions;
 
 namespace tr {
 
@@ -170,6 +171,14 @@ tree::Exp *StaticLink(tr::Level *current, tr::Level *target) {
   }
 
   return static_link;
+}
+
+///@note for lab7, check pointer for GC
+bool IsPointer(type::Ty *ty) {
+  if (typeid(*ty) == typeid(type::RecordTy) || typeid(*ty) == typeid(type::ArrayTy)) {
+    return true;
+  }
+  return false;
 }
 
 tr::ExpAndTy *AbsynTree::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
@@ -658,7 +667,7 @@ tr::ExpAndTy *WhileExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   auto label_list = new std::vector<temp::Label*>();
   label_list->emplace_back(test);
 
-  // TODO: add for debug
+  // add for debug
   assert(test_cx.stm_);
   assert(body_info->exp_->UnNx());
 
@@ -867,6 +876,12 @@ tr::Exp *FunctionDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
       ret_ty = tenv->Look(fun_dec->result_);
     }
 
+    ///@note pass pointer for GC
+    if (IsPointer(ret_ty)) {
+      return_pointer_functions.emplace_back(fun_dec->name_->Name());
+      reg_manager->ReturnValue()->store_pointer_ = true;
+    }
+
     env::EnvEntry *func_entry = new env::FunEntry(func_level, func_label, tylist, ret_ty);
     venv->Enter(fun_dec->name_, func_entry);
   }
@@ -883,7 +898,7 @@ tr::Exp *FunctionDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
     std::list<frame::Access *>  access_list = func_entry->level_->frame_->formals_;
 
     auto type_it = type_list.begin();
-    // TODO: does it has the static link?
+
     auto access_it = access_list.begin();
     if(type_list.size() < access_list.size()) {
       errormsg->Error(pos_, "has the static link\n");
@@ -893,6 +908,12 @@ tr::Exp *FunctionDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
     // add the params to the environment
     for(auto param : params_list) {
       tr::Access *new_access = new tr::Access(func_entry->level_, *access_it);
+
+      ///@note pass pointer for GC
+      if (IsPointer(*type_it)) {
+        new_access->access_->SetStorePointer();
+      }
+
       env::EnvEntry *param_entry = new env::VarEntry(new_access, *type_it);
       venv->Enter(param->name_, param_entry);
       ++access_it;
@@ -933,6 +954,11 @@ tr::Exp *VarDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   type::Ty *init_ty = init_info->ty_->ActualTy();
   if(var_ty) {
     init_ty = var_ty;
+  }
+  
+  ///@note pass pointer for GC
+  if (IsPointer(init_ty)) {
+    access->access_->SetStorePointer();
   }
   
   venv->Enter(this->var_, new env::VarEntry(access, init_ty));

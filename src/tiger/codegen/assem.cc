@@ -66,9 +66,6 @@ static std::string Format(std::string_view assem, temp::TempList *dst,
 
 void OperInstr::Print(FILE *out, temp::Map *m) const {
   std::string result = Format(assem_, dst_, src_, jumps_, m);
-  if(result == "addq t130, t131") {
-    int q = 0;
-  }
   fprintf(out, "%s\n", result.data());
 }
 

@@ -246,6 +246,9 @@ Access* X64Frame::AllocLocal(bool escape) {
   if(escape) {
     s_offset -= WORDSIZE;
     access = new InFrameAccess(s_offset);
+
+    ///@note add for GC
+    locals_.emplace_back(access);
   } else {
     access = new InRegAccess(temp::TempFactory::NewTemp());
   }

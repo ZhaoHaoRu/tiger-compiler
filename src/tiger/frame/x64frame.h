@@ -68,6 +68,10 @@ public:
     tree::Exp *addr = new tree::BinopExp(tree::BinOp::PLUS_OP, frame_ptr, new tree::ConstExp(offset));
     return new tree::MemExp(addr);
   }
+
+  void SetStorePointer() override {
+    store_pointer_ = true;
+  }
 };
 
 
@@ -80,6 +84,11 @@ public:
   /* TODO: Put your lab5 code here */
   tree::Exp *ToExp(tree::Exp *framePtr) const override {
     return new tree::TempExp(reg);
+  }
+
+  void SetStorePointer() override {
+    store_pointer_ = true;
+    reg->store_pointer_ = true;
   }
 };
 
