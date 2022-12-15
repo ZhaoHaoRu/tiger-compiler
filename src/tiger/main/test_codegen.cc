@@ -9,6 +9,7 @@
 
 frame::RegManager *reg_manager;
 frame::Frags *frags;
+std::vector<gc::PointerMap> root_list;
 
 int main(int argc, char **argv) {
   std::string_view fname;

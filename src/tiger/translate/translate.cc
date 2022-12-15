@@ -173,6 +173,7 @@ tree::Exp *StaticLink(tr::Level *current, tr::Level *target) {
   return static_link;
 }
 
+
 ///@note for lab7, check pointer for GC
 bool IsPointer(type::Ty *ty) {
   if (typeid(*ty) == typeid(type::RecordTy) || typeid(*ty) == typeid(type::ArrayTy)) {
@@ -526,10 +527,8 @@ tr::ExpAndTy *RecordExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
 
   // Simply help Garbage collector distinguish record and array and get the size of array would be OK
   ///@note add for lab7, descriptor for record
-  // FIXME: no StringExp here, so use NameExp first?
-  args->Append(
-    new tree::NameExp(temp::LabelFactory::NamedLabel(tag_str))
-  );
+  args->Append(new tree::NameExp(
+      temp::LabelFactory::NamedLabel(typ_->Name() + "_descriptor")));
   
   tree::Stm *stm = new tree::MoveStm(new tree::TempExp(head), frame::ExternalCall("alloc_record", args));
 
@@ -1001,6 +1000,30 @@ tr::Exp *TypeDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
     name_ty->ty_ = type->ty_->Translate(tenv, errormsg);
   }
 
+  ///@note for lab7, generate descriptor for record
+  for (auto &type : type_list) {
+    type::NameTy *name_ty = static_cast<type::NameTy*>(tenv->Look(type->name_));
+    if (typeid(*(name_ty->ty_->ActualTy())) == typeid(type::RecordTy)) {
+      std::string record_tag = name_ty->sym_->Name() + "_descriptor";
+      auto record_ty = static_cast<type::RecordTy*>(name_ty->ty_);
+      
+      auto field_list = record_ty->fields_->GetList();
+      int field_size = field_list.size();
+      std::string descriptor(field_size, '0');
+
+      int pos = 0;
+      for (auto field : field_list) {
+        if (IsPointer(field->ty_)) {
+          descriptor[pos] = '1';
+        }
+        ++pos;
+      }
+
+      temp::Label *record_label = temp::LabelFactory::NamedLabel(record_tag);
+      frame::StringFrag *string_frag = new frame::StringFrag(record_label, descriptor);
+      frags->PushBack(string_frag);
+    }
+  }
   return new tr::ExExp(new tree::ConstExp(0));
 }
 

@@ -3,9 +3,11 @@
 #include "tiger/frame/x64frame.h"
 #include "tiger/parse/parser.h"
 #include "tiger/translate/translate.h"
+#include "tiger/output/output.h"
 
 frame::RegManager *reg_manager;
 frame::Frags *frags;
+std::vector<gc::PointerMap> root_list;
 
 int main(int argc, char **argv) {
   std::string_view fname;

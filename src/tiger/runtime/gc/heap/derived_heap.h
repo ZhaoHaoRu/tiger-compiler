@@ -4,6 +4,7 @@
 #include <vector>
 #include <cassert>
 #include <algorithm>
+#include <map>
 
 namespace gc {
 
@@ -26,6 +27,16 @@ struct ArrayInfo {
   uint64_t array_size;
 };
 
+struct GCPointerMap {
+  uint64_t return_addr;
+  uint64_t next_addr;
+  uint64_t frame_size;
+  uint64_t is_main;
+
+  ///@note offset may less than zero
+  std::vector<int64_t> offsets;
+};
+
 struct {
   bool operator()(const FreeFrag &p1,const FreeFrag &p2) {
     return p1.frag_size < p2.frag_size;
@@ -44,6 +55,8 @@ private:
   std::vector<FreeFrag> free_frags;
   std::vector<RecordInfo> records_info;
   std::vector<ArrayInfo> arrays_info;
+  std::map<uint64_t, GCPointerMap> ptrmap_info;
+  // std::vector<GCPointerMap> ptrmap_info;
 
   uint64_t heap_size_;
   char *heap_;
@@ -51,6 +64,10 @@ private:
 
   /*------------------- some helper function -----------------------*/
   char *FindBestfit(uint64_t size);
+  void Coalesce();
+  void GetPointerMaps();
+  std::vector<uint64_t> RootFinding();
+  void MarkAddress(uint64_t address, std::vector<bool> &active_records, std::vector<bool> &active_arrays);
 
 public:
   uint64_t Used() const override;
@@ -60,6 +77,8 @@ public:
   char *AllocateArray(uint64_t size, uint64_t *sp) override;
   void Initialize(uint64_t size) override;
   void GC() override;
+
+  
 };
 
 } // namespace gc

@@ -3,10 +3,12 @@
 
 #include "tiger/absyn/absyn.h"
 #include "tiger/parse/parser.h"
+#include "tiger/output/output.h"
 
 // define here to parse compilation
 frame::RegManager *reg_manager;
 frame::Frags frags;
+std::vector<gc::PointerMap> root_list;
 
 int main(int argc, char **argv) {
   std::unique_ptr<absyn::AbsynTree> absyn_tree;

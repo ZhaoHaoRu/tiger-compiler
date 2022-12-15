@@ -41,9 +41,11 @@ void outPutPointerMap(FILE *out_) {
     for (auto offset : pointer_map.offsets) {
       output_str += (".quad " + std::to_string(offset) + "\n");
     }
-    output_str += "\n";
     
-    fprintf(out_, output_str.c_str());
+    // the end label
+    output_str += "-1\n";
+    
+    fprintf(out_, "%s\n", output_str.c_str());
   }
 }
 

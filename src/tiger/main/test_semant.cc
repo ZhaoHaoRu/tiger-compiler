@@ -5,10 +5,12 @@
 #include "tiger/errormsg/errormsg.h"
 #include "tiger/parse/parser.h"
 #include "tiger/semant/semant.h"
+#include "tiger/output/output.h"
 
 // define here to pass compilation
 frame::RegManager *reg_manager;
 frame::Frags *frags;
+std::vector<gc::PointerMap> root_list;
 
 int main(int argc, char **argv) {
   std::unique_ptr<absyn::AbsynTree> absyn_tree;
