@@ -231,11 +231,41 @@ void MoveStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
   std::string instr_name;
   std::string assem;
   std::string const_val_str;
+  temp::Temp *fp = reg_manager->FramePointer();
 
   if (typeid(*dst_) == typeid(MemExp)) {
     MemExp *dst_mem = static_cast<MemExp*>(dst_);
     if (typeid(*dst_mem->exp_) == typeid(BinopExp)) {
       BinopExp *dst_binop = static_cast<BinopExp *>(dst_mem->exp_);
+
+      ///@note add for lab7: some additional judgment for GC
+      if (typeid(*(dst_binop->right_)) == typeid(tree::ConstExp) &&
+        typeid(*(dst_binop->left_)) == typeid(tree::TempExp) && 
+        static_cast<tree::TempExp*>(dst_binop->left_)->temp_ == fp) {
+          auto src_reg = src_->Munch(instr_list, fs);
+          int offset = static_cast<tree::ConstExp*>(dst_binop->right_)->consti_;
+
+          assem = "(" + std::string(fs);
+          assem = offset >= 0 ? assem + "+" + std::to_string(offset) : assem + std::to_string(offset); 
+          assem = "movq `s0, " + assem + ")(%rsp)";
+
+          instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({src_reg}), nullptr));
+          return;
+      } 
+
+      if (typeid(*(dst_binop->left_)) == typeid(tree::ConstExp) &&
+        typeid(*(dst_binop->right_)) == typeid(tree::TempExp) && 
+        static_cast<tree::TempExp*>(dst_binop->right_)->temp_ == fp) {
+          auto src_reg = src_->Munch(instr_list, fs);
+          int offset = static_cast<tree::ConstExp*>(dst_binop->left_)->consti_;
+
+          assem = "(" + std::string(fs);
+          assem = offset >= 0 ? assem + "+" + std::to_string(offset) : assem + std::to_string(offset); 
+          assem = "movq `s0, " + assem + ")(%rsp)";
+
+          instr_list.Append(new assem::OperInstr(assem, nullptr, new temp::TempList({src_reg}), nullptr));
+          return;
+      } 
 
       if(dst_binop->op_ == tree::PLUS_OP && typeid(*dst_binop->right_) == typeid(ConstExp)) {
         Exp *e1 = dst_binop->left_; 
@@ -298,6 +328,34 @@ void MoveStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
   } else if (typeid(*dst_) == typeid(TempExp)) {
     temp::Temp *dst_temp = static_cast<tree::TempExp*>(dst_)->temp_;
     Exp *e2=src_;
+    
+    ///@note add for lab7: some additional judgment for GC
+    if (typeid(*src_) == typeid(tree::MemExp)) {
+      tree::MemExp *src_mem = static_cast<tree::MemExp*>(src_);
+      if (typeid(*(src_mem->exp_)) == typeid(tree::BinopExp)) {
+        tree::BinopExp *binop_exp = static_cast<tree::BinopExp*>(src_mem->exp_);
+        tree::Exp *const_exp = nullptr, *other_exp = nullptr;
+
+        if (typeid(*(binop_exp->left_)) == typeid(tree::ConstExp)) {
+          const_exp = binop_exp->left_;
+          other_exp = binop_exp->right_;
+        } else if (typeid(*(binop_exp->right_)) == typeid(tree::ConstExp)) {
+          const_exp = binop_exp->right_;
+          other_exp = binop_exp->left_;
+        }
+
+        if (const_exp && typeid(*other_exp) == typeid(tree::TempExp) && 
+          static_cast<tree::TempExp*>(other_exp)->temp_ == fp) {
+          int offset = static_cast<tree::ConstExp*>(const_exp)->consti_;
+          assem = "movq (" + std::string(fs);
+          assem = offset >= 0 ? assem + "+" + std::to_string(offset) : assem + std::to_string(offset);
+          assem = assem + ")(%rsp), `d0";
+          instr_list.Append(new assem::OperInstr(assem, new temp::TempList({dst_temp}), nullptr, nullptr));
+          return;
+        }
+      }
+    } 
+
     /*MOVE(TEMP~i, e2) */
     auto src_reg = e2->Munch(instr_list, fs);
     assem = "movq `s0, `d0";
@@ -570,6 +628,7 @@ temp::Temp *CallExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
   // XXX: why callersave, I am still a little confused
   // XXX: need to transmit pointer?
   instr_list.Append(new assem::OperInstr(assem, reg_manager->CallerSaves(), src_arg_reg_list, nullptr));
+  
 
   ///@note check whether return pointer for GC
   // TODO: maybe need to supply later
@@ -577,6 +636,10 @@ temp::Temp *CallExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
   if (function_name == "init_array" || function_name == "alloc_record" || function_name == "Alloc") {
     reg_manager->ReturnValue()->store_pointer_ = true;
   }
+
+  ///@note for lab7, add return address label
+  temp::Label *return_label = temp::LabelFactory::NewLabel();
+  instr_list.Append(new assem::LabelInstr(return_label->Name(), return_label));
 
   // move the function return value to res_reg
   assem = "movq `s0, `d0";
@@ -593,6 +656,7 @@ temp::Temp *CallExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
   }
   assem = "addq $" + std::to_string(offset) + ", %rsp";
   instr_list.Append(new assem::OperInstr(assem, nullptr, nullptr, nullptr));
+
 
   // restore the arglist
   args_->Insert(static_link);

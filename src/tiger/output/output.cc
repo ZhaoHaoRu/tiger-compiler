@@ -43,9 +43,9 @@ void outPutPointerMap(FILE *out_) {
     }
     
     // the end label
-    output_str += "-1\n";
+    output_str += ".quad -1\n";
     
-    fprintf(out_, "%s\n", output_str.c_str());
+    fprintf(out_, "%s", output_str.c_str());
   }
 }
 
@@ -134,7 +134,7 @@ void ProcFrag::OutputAssem(FILE *out, OutputPhase phase, bool need_ra) const {
     cg::CodeGen code_gen(frame_, std::move(traces));
     code_gen.Codegen();
     assem_instr = code_gen.TransferAssemInstr();
-    // TigerLog(assem_instr.get(), color);
+    TigerLog(assem_instr.get(), color);
   }
 
   // anlysis escape before register allocation
@@ -153,6 +153,7 @@ void ProcFrag::OutputAssem(FILE *out, OutputPhase phase, bool need_ra) const {
   }
 
   // Lab 7: Garbage collection
+  TigerLog("----====Garbage collection====-----\n");
   il = output::AddRootFinding(il, frame_, escapes, color);
   
   ///@note change for me

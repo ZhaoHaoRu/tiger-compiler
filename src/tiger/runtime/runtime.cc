@@ -3,6 +3,7 @@
 #include <string.h>
 // Note: change to header file of your implemnted heap!
 #include "../runtime/gc/heap/heap.h"
+#include "../runtime/gc/heap/derived_heap.h"
 
 #ifndef EXTERNC
 #define EXTERNC extern "C" 
@@ -57,6 +58,7 @@ EXTERNC long *init_array(int size, long init) {
     a = (long *)tiger_heap->AllocateArray(allocate_size, sp);
     // a = (long*)tiger_heap->Allocate(allocate_size);
   }
+  printf("the init: %d\n", init);
   for (i = 0; i < size; i++) a[i] = init;
   return a;
 }
@@ -66,7 +68,7 @@ struct string {
   unsigned char chars[1];
 };
 
-EXTERNC int *alloc_record(int size, std::string descriptor) {
+EXTERNC int *alloc_record(int size, string *descriptor) {
   int i;
   int *p, *a;
 
@@ -74,11 +76,11 @@ EXTERNC int *alloc_record(int size, std::string descriptor) {
   GET_RBP(sp);
   sp += 2;
 
-  p = a = (int *)tiger_heap->AllocateRecord(size, descriptor, sp);
+  p = a = (int *)tiger_heap->AllocateRecord(size, descriptor->length, (char*)descriptor->chars, sp);
   // p = a = (int *)tiger_heap->Allocate(size);
   if(!p) {
     tiger_heap->GC();
-    p = a = (int *)tiger_heap->AllocateRecord(size, descriptor, sp);
+    p = a = (int *)tiger_heap->AllocateRecord(size, descriptor->length, (char*)descriptor->chars, sp);
     // p = a = (int *)tiger_heap->Allocate(size);
   }
   for (i = 0; i < size; i += sizeof(int)) *p++ = 0;
@@ -115,6 +117,7 @@ int main() {
   }
   // Change it to your own implementation after implement heap and delete the comment!
   // tiger_heap = new gc::TigerHeap();
+  tiger_heap = new gc::DerivedHeap();
   tiger_heap->Initialize(TIGER_HEAP_SIZE);
   return tigermain(0 /* static link */);
 }

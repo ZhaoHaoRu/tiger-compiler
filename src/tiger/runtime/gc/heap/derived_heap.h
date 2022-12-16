@@ -73,7 +73,7 @@ public:
   uint64_t Used() const override;
   uint64_t MaxFree() const override;
   char *Allocate(uint64_t size) override;
-  char *AllocateRecord(uint64_t size, std::string descriptor, uint64_t *sp) override;
+  char *AllocateRecord(uint64_t size, int descriptor_length, char *descriptor, uint64_t *sp) override;
   char *AllocateArray(uint64_t size, uint64_t *sp) override;
   void Initialize(uint64_t size) override;
   void GC() override;

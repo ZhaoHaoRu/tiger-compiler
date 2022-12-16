@@ -88,7 +88,7 @@ public:
   ///@note add for lab7
   bool store_pointer_{false};
 
-  Access(Kind kind): kind_(kind) {}
+  Access(Kind kind): kind_(kind), store_pointer_(false) {}
 
   virtual tree::Exp *ToExp(tree::Exp *framePtr) const = 0;
 

@@ -33,7 +33,7 @@ public:
   /**
    * Allocate record, expand allocate
    */
-  virtual char *AllocateRecord(uint64_t size, std::string descriptor, uint64_t *sp) = 0;
+  virtual char *AllocateRecord(uint64_t size, int descriptor_length, char *descriptor, uint64_t *sp) = 0;
 
   /**
    * Allocate array, expand allocate

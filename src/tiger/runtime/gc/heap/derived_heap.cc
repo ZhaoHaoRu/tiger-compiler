@@ -76,7 +76,7 @@ namespace gc {
         return FindBestfit(size);
     }
 
-    char *DerivedHeap::AllocateRecord(uint64_t size, std::string descriptor, uint64_t *sp) {
+    char *DerivedHeap::AllocateRecord(uint64_t size, int descriptor_length, char *descriptor, uint64_t *sp) {
         char *start_pos = Allocate(size);
         if (!start_pos) {
             return nullptr;
@@ -88,8 +88,8 @@ namespace gc {
         RecordInfo new_record_info;
         new_record_info.start_pos = start_pos;
         new_record_info.record_size = size;
-        new_record_info.descriptor = descriptor;
-        new_record_info.descriptor_size = descriptor.size();
+        new_record_info.descriptor = std::string(descriptor);
+        new_record_info.descriptor_size = descriptor_length;
         records_info.emplace_back(new_record_info);
         return start_pos;
     }
@@ -106,6 +106,7 @@ namespace gc {
         new_array_info.start_pos = start_pos;
         new_array_info.array_size = size;
         arrays_info.emplace_back(new_array_info);
+        printf("alloc array size: %ld, the alloc pos: %lx\n", size, start_pos);
         return start_pos;
     }
 
@@ -211,6 +212,7 @@ namespace gc {
                 FreeFrag new_free_frag;
                 new_free_frag.start_pos = arrays_info[i].start_pos;
                 new_free_frag.frag_size = arrays_info[i].array_size;
+                printf("free array size: %ld, the alloc pos: %lx\n", new_free_frag.frag_size, new_free_frag.start_pos);
                 free_frags.emplace_back(new_free_frag);
             }
         }
@@ -247,12 +249,16 @@ namespace gc {
                 cur += 1;
                 int64_t offset = *cur;
                 if (offset == -1) {     // the end label
+                    cur += 1;
                     break;
                 }
                 offsets.emplace_back(offset);
             }
-
+            
             new_pointer_map.offsets = offsets;
+            printf("ptrmap return address: %lx\n", return_address);
+            printf("ptrmap framesize: %lx\n", frame_size);
+            printf("ptrmap next address: %lx\n", next_address);
             assert(!ptrmap_info.count(return_address));
             ptrmap_info[return_address] = new_pointer_map;
 
@@ -270,7 +276,8 @@ namespace gc {
 
         bool is_main = false;
         while (!is_main) {
-            uint64_t return_addr = *(sp - 1);
+            uint64_t return_addr = *(sp - 1) + 5;
+            printf("the actual return addr: %lx\n", return_addr);
             assert(ptrmap_info.count(return_addr));
             if (ptrmap_info.count(return_addr)) {
                 auto wanted_ptr_map = ptrmap_info[return_addr];

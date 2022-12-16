@@ -31,7 +31,7 @@ public:
 private:
   int num_;
   
-  explicit Temp(int num) : num_(num) {}
+  explicit Temp(int num, bool store_pointer = false) : num_(num), store_pointer_(store_pointer) {}
 };
 
 class TempFactory {
