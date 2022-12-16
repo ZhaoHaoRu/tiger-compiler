@@ -15,6 +15,7 @@ using INodeList = graph::NodeList<temp::Temp>;
 using INodeListPtr = graph::NodeList<temp::Temp>*;
 using IGraph = graph::Graph<temp::Temp>;
 using IGraphPtr = graph::Graph<temp::Temp>*;
+using TempListPtr = std::shared_ptr<temp::TempList>;
 
 class MoveList {
 public:
@@ -67,6 +68,7 @@ public:
   tab::Table<temp::Temp, INode> *temp_node_map_;  // NOTE: to store the map between temp and graph node
 
   void LiveMap();
+  void SmartLiveMap();
   void InterfGraph();
 };
 

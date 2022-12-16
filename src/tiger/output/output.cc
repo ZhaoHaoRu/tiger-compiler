@@ -44,8 +44,9 @@ void outPutPointerMap(FILE *out_) {
     
     // the end label
     output_str += ".quad -1\n";
-    
+
     fprintf(out_, "%s", output_str.c_str());
+    printf("finish output the PointerMap\n");
   }
 }
 

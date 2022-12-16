@@ -233,22 +233,22 @@ public:
       printf("same count: %d, node_count: %d\n", same_count, node_count);
       if (same_count == node_count) {
         ///@note print for debug
-        for (auto node : f_nodes) {
-          assem::Instr *instr = node->NodeInfo();
-          if (typeid(*instr) != typeid(assem::LabelInstr)) {
-            printf("instr: %s\n", instr->getAssem().c_str());
-            printf("address in: ");
-            for (auto elem : address_in_[node]) {
-              printf("%d ", elem);
-            }
-            printf("\n");
-            printf("address out: ");
-            for (auto elem : address_out_[node]) {
-              printf("%d ", elem);
-            }
-            printf("\n");
-          }
-        }
+        // for (auto node : f_nodes) {
+        //   assem::Instr *instr = node->NodeInfo();
+        //   if (typeid(*instr) != typeid(assem::LabelInstr)) {
+        //     printf("instr: %s\n", instr->getAssem().c_str());
+        //     printf("address in: ");
+        //     for (auto elem : address_in_[node]) {
+        //       printf("%d ", elem);
+        //     }
+        //     printf("\n");
+        //     printf("address out: ");
+        //     for (auto elem : address_out_[node]) {
+        //       printf("%d ", elem);
+        //     }
+        //     printf("\n");
+        //   }
+        // }
         break;
       }
     }
@@ -366,6 +366,7 @@ public:
     HandleCallRelatedPointer();
     printf("begin rewrite the program\n");
     RewriteProgram();
+    printf("finish rewrite the program\n");
 
     std::vector<PointerMap> result;
     bool is_main = false;
@@ -374,6 +375,7 @@ public:
       is_main = true;
     }
 
+    printf("get line 378\n");
     for (auto elem : valid_addrs) {
       PointerMap new_map;
       new_map.frame_size = frame_name + "_framesize";
@@ -397,13 +399,17 @@ public:
       result.emplace_back(new_map);
     }
 
+    printf("get line 402\n");
     // fill next label
     int n = result.size();
     for (int i = 0; i < n - 1; ++i) {
       result[i].next_label = result[i + 1].label;
     }
 
-    result[n - 1].next_label = "0";
+    printf("get line 409\n");
+    if (n != 0) {
+      result[n - 1].next_label = "0";
+    }
     return result;
   }
 

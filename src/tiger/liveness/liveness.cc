@@ -4,6 +4,60 @@ extern frame::RegManager *reg_manager;
 
 namespace live {
 
+TempListPtr SmartUnion(TempListPtr list1, TempListPtr list2) {
+    auto res = std::make_shared<temp::TempList>();
+    std::list<temp::Temp*> temp_list = list1->GetList();
+
+    for(auto temp : temp_list) {
+      res->Append(temp);
+    }
+
+    if(list2) {
+      auto temps = list2->GetList();
+  
+      for(auto temp : temps) {
+        if(!res->Contain(temp)) {
+          res->Append(temp);
+        }
+      }
+    }
+  
+  return res;
+}
+
+
+TempListPtr SmartDiff(TempListPtr list1, TempListPtr list2) {
+  auto res = std::make_shared<temp::TempList>();
+  std::list<temp::Temp*> temp_list = list1->GetList();
+  for(auto temp : temp_list) {
+    if(!list2->Contain(temp)) {
+      res->Append(temp);
+    }
+  }
+  return res;
+}
+
+
+bool SmartEqual(TempListPtr list1, TempListPtr list2) {
+  auto temp_list = list1->GetList();
+  auto another_temp_list = list2->GetList();
+
+  if(temp_list.size() != another_temp_list.size()) {
+    return false;
+  }
+
+  auto it1 = temp_list.begin();
+  auto it2 = another_temp_list.begin();
+
+  for(auto elem : temp_list) {
+    if(!list2->Contain(elem)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
 bool MoveList::Contain(INodePtr src, INodePtr dst) {
   return std::any_of(move_list_.cbegin(), move_list_.cend(),
                      [src, dst](std::pair<INodePtr, INodePtr> move) {
@@ -53,6 +107,86 @@ MoveList *MoveList::Diff(MoveList *list) {
   return res;
 }
 
+///@note modify for lab7, use smart pointer to manage memory
+void LiveGraphFactory::SmartLiveMap() {
+  std::unordered_map<fg::FNodePtr, TempListPtr> in, out;
+  int total_count = 0;
+  for(auto node : flowgraph_->Nodes()->GetList()) {
+    in[node] = std::make_shared<temp::TempList>();
+    out[node] = std::make_shared<temp::TempList>();
+    ++total_count;
+  }
+
+  int counter = 0;
+  while(true) {
+    auto flowgraph_node_list = flowgraph_->Nodes()->GetList();
+
+    for(auto node : flowgraph_->Nodes()->GetList()) {
+      TempListPtr prev_in = in[node];
+      TempListPtr prev_out = out[node];
+      TempListPtr use = node->NodeInfo()->SmartUse();
+      TempListPtr def = node->NodeInfo()->SmartDef();
+
+      // out[n] - def[n]
+      assert(prev_out);
+      TempListPtr mid = SmartDiff(prev_out, def);
+      // use[n] U (out[n] - def[n])
+      TempListPtr new_in = SmartUnion(mid, use);
+      in[node] = new_in;
+
+      // out[n] = U in[s]
+      TempListPtr new_out = nullptr;
+      auto succ_list = node->Succ()->GetList();
+
+      for(auto succ : succ_list) {
+        TempListPtr succ_in = in[succ];
+        if(new_out == nullptr) {
+          new_out = SmartUnion(succ_in, prev_out);
+        } else {
+          new_out = SmartUnion(new_out, succ_in);
+        }
+      }
+
+      if(new_out == nullptr) {
+        new_out = prev_out;
+      }
+
+      assert(new_out != nullptr);
+      out[node] = new_out;
+
+      // check whether reach fix point for this node
+      if(new_in && prev_in && new_out && prev_out && SmartEqual(new_in, prev_in) && SmartEqual(new_out, prev_out)) {
+        ++counter;
+      }
+    }
+
+    printf("the counter: %d, the total count: %d\n", counter, total_count);
+    if(counter == total_count) {
+      break;
+    } else {
+      counter = 0;
+    }
+  }
+
+  // put into in_ and out_
+  for(auto node : flowgraph_->Nodes()->GetList()) {
+    // assert(!in[node]->CheckEmpty());
+    temp::TempList *new_in = new temp::TempList();
+    temp::TempList *new_out = new temp::TempList();
+    for (auto temp : in[node]->GetList()) {
+      new_in->Append(temp);
+    }
+    for (auto temp : out[node]->GetList()) {
+      new_out->Append(temp);
+    }
+    in_->Enter(node, new_in);
+    // assert(!out[node]->CheckEmpty());
+    out_->Enter(node, new_out);
+  }
+
+  printf("finish SmartLiveMap\n");
+}
+
 void LiveGraphFactory::LiveMap() {
   /* TODO: Put your lab6 code here */
   int total_count = 0;
@@ -61,7 +195,7 @@ void LiveGraphFactory::LiveMap() {
     out_->Enter(node, new temp::TempList());
     ++total_count;
   }
-  // printf("get line 68\n");
+
   int counter = 0;
   while(true) {
     auto flowgraph_node_list = flowgraph_->Nodes()->GetList();
@@ -103,6 +237,7 @@ void LiveGraphFactory::LiveMap() {
       }
     }
 
+    printf("the counter: %d, the total count: %d\n", counter, total_count);
     if(counter == total_count) {
       break;
     } else {
@@ -221,8 +356,11 @@ void LiveGraphFactory::InterfGraph() {
 }
 
 void LiveGraphFactory::Liveness() {
-  LiveMap();
+  // LiveMap();
+  SmartLiveMap();
+  printf("begin InterfGraph\n");
   InterfGraph();
+  printf("finish InterfGraph\n");
 }
 
 } // namespace live

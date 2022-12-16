@@ -60,9 +60,26 @@ temp::TempList *LabelInstr::Def() const {
   return new temp::TempList();
 }
 
+TempListPtr LabelInstr::SmartDef() const {
+  /* TODO: Put your lab6 code here */
+  return std::make_shared<temp::TempList>();
+}
+
 temp::TempList *MoveInstr::Def() const {
   /* TODO: Put your lab6 code here */
   return dst_ != nullptr? dst_ : new temp::TempList();
+}
+
+TempListPtr MoveInstr::SmartDef() const {
+  /* TODO: Put your lab6 code here */
+  auto result = std::make_shared<temp::TempList>();
+  if (dst_ == nullptr) {
+    return result; 
+  } else {
+    for (auto elem : dst_->GetList()) {
+      result->Append(elem);
+    }
+  }
 }
 
 temp::TempList *OperInstr::Def() const {
@@ -70,9 +87,26 @@ temp::TempList *OperInstr::Def() const {
   return dst_ != nullptr? dst_ : new temp::TempList();
 }
 
+TempListPtr OperInstr::SmartDef() const {
+  /* TODO: Put your lab6 code here */
+  auto result = std::make_shared<temp::TempList>();
+  if (dst_ == nullptr) {
+    return result; 
+  } else {
+    for (auto elem : dst_->GetList()) {
+      result->Append(elem);
+    }
+  }
+}
+
 temp::TempList *LabelInstr::Use() const {
   /* TODO: Put your lab6 code here */
   return new temp::TempList();
+}
+
+TempListPtr LabelInstr::SmartUse() const {
+  /* TODO: Put your lab6 code here */
+  return std::make_shared<temp::TempList>();
 }
 
 temp::TempList *MoveInstr::Use() const {
@@ -80,8 +114,32 @@ temp::TempList *MoveInstr::Use() const {
   return src_ != nullptr? src_ : new temp::TempList();
 }
 
+TempListPtr MoveInstr::SmartUse() const {
+  /* TODO: Put your lab6 code here */
+  auto result = std::make_shared<temp::TempList>();
+  if (src_ == nullptr) {
+    return result; 
+  } else {
+    for (auto elem : src_->GetList()) {
+      result->Append(elem);
+    }
+  }
+}
+
 temp::TempList *OperInstr::Use() const {
   /* TODO: Put your lab6 code here */
   return src_ != nullptr? src_ : new temp::TempList();
+}
+
+TempListPtr OperInstr::SmartUse() const {
+  /* TODO: Put your lab6 code here */
+  auto result = std::make_shared<temp::TempList>();
+  if (src_ == nullptr) {
+    return result; 
+  } else {
+    for (auto elem : src_->GetList()) {
+      result->Append(elem);
+    }
+  }
 }
 } // namespace assem

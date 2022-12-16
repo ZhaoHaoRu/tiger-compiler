@@ -9,6 +9,7 @@ namespace temp {
 
 using Label = sym::Symbol;
 
+
 class LabelFactory {
 public:
   static Label *NewLabel();
@@ -75,6 +76,7 @@ public:
   bool Equal(TempList *new_temp_list);
   TempList *ReplaceTemp(temp::Temp *old_temp, temp::Temp *new_temp);
   void SetContent(std::list<Temp *> &list) { temp_list_ = list;}
+  bool CheckEmpty();
   [[nodiscard]] Temp *NthTemp(int i) const;
   [[nodiscard]] const std::list<Temp *> &GetList() const { return temp_list_; }
 

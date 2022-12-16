@@ -4,10 +4,14 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "tiger/frame/temp.h"
 
+
 namespace assem {
+
+using TempListPtr = std::shared_ptr<temp::TempList>;
 
 class Targets {
 public:
@@ -25,7 +29,9 @@ public:
   virtual void ReplaceDef(temp::Temp *old_temp, temp::Temp *new_temp) = 0;
   virtual void ReplaceUse(temp::Temp *old_temp, temp::Temp *new_temp) = 0;
   [[nodiscard]] virtual temp::TempList *Def() const = 0;
+  [[nodiscard]] virtual TempListPtr SmartDef() const = 0;
   [[nodiscard]] virtual temp::TempList *Use() const = 0;
+  [[nodiscard]] virtual TempListPtr SmartUse() const = 0;
 };
 
 class OperInstr : public Instr {
@@ -43,7 +49,9 @@ public:
   void ReplaceDef(temp::Temp *old_temp, temp::Temp *new_temp) override;
   void ReplaceUse(temp::Temp *old_temp, temp::Temp *new_temp) override;
   [[nodiscard]] temp::TempList *Def() const override;
+  [[nodiscard]] TempListPtr SmartDef() const override;
   [[nodiscard]] temp::TempList *Use() const override;
+  [[nodiscard]] TempListPtr SmartUse() const override;
 };
 
 class LabelInstr : public Instr {
@@ -59,7 +67,9 @@ public:
   void ReplaceDef(temp::Temp *old_temp, temp::Temp *new_temp) override {return;}
   void ReplaceUse(temp::Temp *old_temp, temp::Temp *new_temp) override {return;}
   [[nodiscard]] temp::TempList *Def() const override;
+  [[nodiscard]] TempListPtr SmartDef() const override;
   [[nodiscard]] temp::TempList *Use() const override;
+  [[nodiscard]] TempListPtr SmartUse() const override;
 };
 
 class MoveInstr : public Instr {
@@ -75,7 +85,9 @@ public:
   void ReplaceDef(temp::Temp *old_temp, temp::Temp *new_temp) override;
   void ReplaceUse(temp::Temp *old_temp, temp::Temp *new_temp) override;
   [[nodiscard]] temp::TempList *Def() const override;
+  [[nodiscard]] TempListPtr SmartDef() const override;
   [[nodiscard]] temp::TempList *Use() const override;
+  [[nodiscard]] TempListPtr SmartUse() const override;
 };
 
 class InstrList {
