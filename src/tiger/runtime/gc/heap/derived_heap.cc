@@ -33,7 +33,7 @@ namespace gc {
         for (auto frag : free_frags) {
             max_size = std::max(max_size, frag.frag_size);
         }
-        return max_size;
+        return max_size / 100;
     }
 
     char *DerivedHeap::FindBestfit(uint64_t size) {
@@ -68,7 +68,11 @@ namespace gc {
     }
 
     char *DerivedHeap::Allocate(uint64_t size) {
-        uint64_t max_size = MaxFree();
+        // uint64_t max_size = MaxFree();
+        uint64_t max_size = 0;
+        for (auto frag : free_frags) {
+            max_size = std::max(max_size, frag.frag_size);
+        }
         if (max_size < size) {
             return nullptr;
         }
