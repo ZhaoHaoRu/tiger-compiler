@@ -176,7 +176,7 @@ tree::Exp *StaticLink(tr::Level *current, tr::Level *target) {
 
 ///@note for lab7, check pointer for GC
 bool IsPointer(type::Ty *ty) {
-  if (typeid(*ty) == typeid(type::RecordTy) || typeid(*ty) == typeid(type::ArrayTy)) {
+  if (typeid(*(ty->ActualTy())) == typeid(type::RecordTy) || typeid(*(ty->ActualTy())) == typeid(type::ArrayTy)) {
     return true;
   }
   return false;
@@ -507,6 +507,7 @@ tr::ExpAndTy *RecordExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
     tr::ExpAndTy *ret = field->exp_->Translate(venv, tenv, level, label, errormsg);
     assert(ret != nullptr);
     if (typeid(*ret->ty_->ActualTy()) == typeid(type::RecordTy) || typeid(*ret->ty_->ActualTy()) == typeid(type::ArrayTy)) {
+      printf("the field is record!\n");
       tag_str[pos] = '1';
     }
     exp_list->Append(ret->exp_->UnEx());
@@ -1014,12 +1015,14 @@ tr::Exp *TypeDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
       int pos = 0;
       for (auto field : field_list) {
         if (IsPointer(field->ty_)) {
+          printf("modify the descriptor!\n");
           descriptor[pos] = '1';
         }
         ++pos;
       }
 
       temp::Label *record_label = temp::LabelFactory::NamedLabel(record_tag);
+      printf("the descriptor is %s\n", descriptor.c_str());
       frame::StringFrag *string_frag = new frame::StringFrag(record_label, descriptor);
       frags->PushBack(string_frag);
     }

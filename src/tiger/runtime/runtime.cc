@@ -46,7 +46,6 @@ EXTERNC long *init_array(int size, long init) {
   int i;
   uint64_t allocate_size = size * sizeof(long);
 
-  // XXX:?
   uint64_t *sp;
   GET_RBP(sp);
   sp += 2;
@@ -58,7 +57,6 @@ EXTERNC long *init_array(int size, long init) {
     a = (long *)tiger_heap->AllocateArray(allocate_size, sp);
     // a = (long*)tiger_heap->Allocate(allocate_size);
   }
-  printf("the init: %d\n", init);
   for (i = 0; i < size; i++) a[i] = init;
   return a;
 }

@@ -160,7 +160,7 @@ void LiveGraphFactory::SmartLiveMap() {
       }
     }
 
-    printf("the counter: %d, the total count: %d\n", counter, total_count);
+    // printf("the counter: %d, the total count: %d\n", counter, total_count);
     if(counter == total_count) {
       break;
     } else {
@@ -237,7 +237,7 @@ void LiveGraphFactory::LiveMap() {
       }
     }
 
-    printf("the counter: %d, the total count: %d\n", counter, total_count);
+    // printf("the counter: %d, the total count: %d\n", counter, total_count);
     if(counter == total_count) {
       break;
     } else {
