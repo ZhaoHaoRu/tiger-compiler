@@ -3,6 +3,7 @@
 ## Contents
 
 - [Tiger Compiler Labs in C++](#tiger-compiler-labs-in-c)
+  - [Tips](#tips)
   - [Contents](#contents)
   - [Overview](#overview)
   - [Difference Between C Labs and C++ Labs](#difference-between-c-labs-and-c-labs)
@@ -15,6 +16,58 @@
   - [Contributing to Tiger Compiler](#contributing-to-tiger-compiler)
   - [External Documentations](#external-documentations)
 
+## Tips
+1. 使用docker
+   ```shell
+    sudo make docker-run
+    cd tiger-compiler
+    make clean
+    make gradelabX
+   ```
+2. 运行单个测试用例
+- lab2
+  ```shell
+  cd build
+  ./test_lex /home/stu/tiger-compiler/testdata/lab2/testcases/merge.tig
+  ```
+- lab3
+  ```shell
+  cd build
+  ./test_parse /home/stu/tiger-compiler/testdata/lab3/testcases/merge.tig
+  ```
+- lab4
+  ```shell
+  cd build
+  ./test_semant /home/stu/tiger-compiler/testdata/lab4/testcases/test10.tig
+  ```
+- lab5-part1
+  ```shell 
+  cd build
+  ./test_translate /home/stu/tiger-compiler/testdata/lab5or6/testcases/bsearch.tig
+  ```
+- lab5
+  ```shell
+    cd build
+   ./test_codegen /home/stu/tiger-compiler/testdata/lab5or6/testcases/bsearch.tig
+   cd ../scripts/lab5_test
+   python3 main.py -d ../../testdata/lab5or6/testcases/tfo.tig.s
+   python3 main.py ../../testdata/lab5or6/testcases/tfo.tig.s
+   cd ../../build
+   p label_->Name()
+   ```
+- lab6
+  ```shell
+   ./tiger-compiler /home/stu/tiger-compiler/testdata/lab5or6/testcases/tfo.tig
+   gcc -Wl,--wrap,getchar -m64 /home/stu/tiger-compiler/testdata/lab5or6/testcases/tfo.tig.s /home/stu/tiger-compiler/src/tiger/runtime/runtime.c -o test.out
+   ./test.out
+   objdump -d test.out > test-fact.asm
+  ```
+- lab7
+  ```shell
+  cmake -DCMAKE_BUILD_TYPE=DEBUG ..
+  ./tiger-compiler /home/stu/tiger-compiler/testdata/lab7/testcases/simple_array.tig
+  g++ -g -Wl,--wrap,getchar -m64 /home/stu/tiger-compiler/src/tiger/runtime/runtime.cc /home/stu/tiger-compiler/testdata/lab7/testcases/simple_array.tig.s /home/stu/tiger-compiler/src/tiger/runtime/gc/heap/derived_heap.cc -o test.out
+  ```
 ## Overview
 
 We rewrote the Tiger Compiler labs using the C++ programming language because some features in C++ like inheritance and polymorphism
