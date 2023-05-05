@@ -56,7 +56,6 @@ void GeneratePointerRoot(frame::Frame *frame) {
     } else {
       if (formal->store_pointer_ == true) {
         frame::InRegAccess *in_reg_access = static_cast<frame::InRegAccess *>(formal);
-        // TODO: maybe need to modify later
         cg::in_reg_pointers.emplace_back(in_reg_access->reg->Int());
       }
     }
@@ -213,7 +212,7 @@ void CjumpStm::Munch(assem::InstrList &instr_list, std::string_view fs) {
       break;
   }
 
-  // get the target label, if cannot decide thw jump-target label, using the first label
+  // get the target label, if cannot decide the jump-target label, using the first label
   std::string jump_label = "`j0";
   if(true_label_) {
       jump_label = true_label_->Name();
@@ -378,7 +377,7 @@ temp::Temp *BinopExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
   temp::Temp *left_reg = left_->Munch(instr_list, fs);
   temp::Temp *right_reg = right_->Munch(instr_list, fs);
 
-  // register for saving the reuslt
+  // register for saving the result
   temp::Temp *res_reg = temp::TempFactory::NewTemp();
   std::string assem;
 
@@ -625,13 +624,9 @@ temp::Temp *CallExp::Munch(assem::InstrList &instr_list, std::string_view fs) {
 
   // call the function, and move the arguments to the arg-registers
   assem = "callq " + static_cast<tree::NameExp*>(fun_)->name_->Name();
-  // XXX: why callersave, I am still a little confused
-  // XXX: need to transmit pointer?
-  instr_list.Append(new assem::OperInstr(assem, reg_manager->CallerSaves(), src_arg_reg_list, nullptr));
+  instr_list.Append(new assem::OperInstr(assem, reg_manager->CallDefRegister(), src_arg_reg_list, nullptr));
   
-
   ///@note check whether return pointer for GC
-  // TODO: maybe need to supply later
   std::string function_name = static_cast<tree::NameExp*>(fun_)->name_->Name();
   if (function_name == "init_array" || function_name == "alloc_record" || function_name == "Alloc") {
     reg_manager->ReturnValue()->store_pointer_ = true;

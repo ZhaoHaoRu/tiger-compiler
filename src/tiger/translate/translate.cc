@@ -108,14 +108,8 @@ public:
     temp::Label *t = temp::LabelFactory::NewLabel();
     temp::Label *f = temp::LabelFactory::NewLabel();
 
-    // tr::PatchList true_list(std::list<temp::Label **>{&t});
-    // tr::PatchList false_list(std::list<temp::Label **>{&f});
-
     cx_.trues_.DoPatch(t);
     cx_.falses_.DoPatch(f);
-
-    // PatchList::JoinPatch(cx_.trues_, true_list);
-    // PatchList::JoinPatch(cx_.falses_, false_list);
 
     return new tree::EseqExp(
       new tree::MoveStm(
@@ -160,10 +154,6 @@ namespace absyn {
 // for static link
 tree::Exp *StaticLink(tr::Level *current, tr::Level *target) {
   tree::Exp *static_link = new tree::TempExp(reg_manager->FramePointer());
-
-  // if(!current || !current->parent_) {
-  //   return nullptr;
-  // }
 
   while(current != target) {
     static_link = new tree::MemExp(new tree::BinopExp(tree::PLUS_OP, static_link, new tree::ConstExp(reg_manager->WordSize())));
@@ -507,7 +497,6 @@ tr::ExpAndTy *RecordExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
     tr::ExpAndTy *ret = field->exp_->Translate(venv, tenv, level, label, errormsg);
     assert(ret != nullptr);
     if (typeid(*ret->ty_->ActualTy()) == typeid(type::RecordTy) || typeid(*ret->ty_->ActualTy()) == typeid(type::ArrayTy)) {
-      printf("the field is record!\n");
       tag_str[pos] = '1';
     }
     exp_list->Append(ret->exp_->UnEx());
@@ -545,8 +534,6 @@ tr::ExpAndTy *RecordExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                       )
                     );
     tree::Stm *move_stm = new tree::MoveStm(dst, exp);
-    // TODO: add for debug
-    assert(stm);
     stm = new tree::SeqStm(stm, move_stm);
     ++count;
   }
@@ -605,6 +592,19 @@ tr::ExpAndTy *AssignExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   return new tr::ExpAndTy(exp, type::VoidTy::Instance());
 }
 
+// test:
+//    if (condition) then goto t else goto f
+// 
+// t:
+//    r <- then
+//    goto done
+// 
+// f:
+//    r <- else
+//    goto done
+// 
+// done:
+
 tr::ExpAndTy *IfExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                                tr::Level *level, temp::Label *label,
                                err::ErrorMsg *errormsg) const {
@@ -654,6 +654,14 @@ tr::ExpAndTy *IfExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
   return new tr::ExpAndTy(exp, then_info->ty_);
 }
 
+/* 
+* test:
+*   if condition then body else goto done
+* body:
+*   ...
+*   goto test
+* done:
+*/
 tr::ExpAndTy *WhileExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                                   tr::Level *level, temp::Label *label,            
                                   err::ErrorMsg *errormsg) const {
@@ -783,6 +791,15 @@ tr::ExpAndTy *BreakExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
 
   return new tr::ExpAndTy(exp, type::VoidTy::Instance());
 }
+
+/* 
+* let a = ...           (dec)
+*     b = ...
+*     function f1() = ...
+*  in
+*     ...               (body)
+*  end
+*/
 
 tr::ExpAndTy *LetExp::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
                                 tr::Level *level, temp::Label *label,
@@ -1015,14 +1032,12 @@ tr::Exp *TypeDec::Translate(env::VEnvPtr venv, env::TEnvPtr tenv,
       int pos = 0;
       for (auto field : field_list) {
         if (IsPointer(field->ty_)) {
-          printf("modify the descriptor!\n");
           descriptor[pos] = '1';
         }
         ++pos;
       }
 
       temp::Label *record_label = temp::LabelFactory::NamedLabel(record_tag);
-      printf("the descriptor is %s\n", descriptor.c_str());
       frame::StringFrag *string_frag = new frame::StringFrag(record_label, descriptor);
       frags->PushBack(string_frag);
     }

@@ -11,28 +11,22 @@ namespace ra {
         while(true) {
             // liveness analysis
             // flow graph
-            printf("begin flow graph\n");
             assert(instr_list_);
             fg::FlowGraphFactory flowgraph_factory(instr_list_->GetInstrList());
             flowgraph_factory.AssemFlowGraph();
             fg::FGraphPtr flow_graph = flowgraph_factory.GetFlowGraph();
-            printf("finish flow graph\n");
 
             // live graph
-            printf("begin live graph\n");
             live::LiveGraphFactory livegraph_factory(flow_graph);
             livegraph_factory.Liveness();
             live::LiveGraph live_graph = livegraph_factory.GetLiveGraph();
-            printf("finish live graph\n");
 
             // color
-            printf("begin color\n");
             col::Color color_tool(live_graph);
             color_tool.ColorMain();
             col::Result color_result = color_tool.getResult();
             coloring = color_result.coloring;
             spills = color_result.spills;
-            printf("finish color\n");
         
             // rewrite the program
             if(!spills || spills->GetList().empty()) {
@@ -40,11 +34,8 @@ namespace ra {
             }
             new_temps.clear();
 
-            printf("begin rewrite program\n");
             auto new_instr_list = RewriteProgram(new_temps);
-            printf("finish rewrite program\n");
             instr_list_ = new cg::AssemInstr(new_instr_list);
-            // TODO: how new temps use?
         }
         MergeMoves();
     }

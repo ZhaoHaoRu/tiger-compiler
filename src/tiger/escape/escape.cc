@@ -60,11 +60,6 @@ void StringExp::Traverse(esc::EscEnvPtr env, int depth) {
 
 void CallExp::Traverse(esc::EscEnvPtr env, int depth) {
   /* TODO: Put your lab5 code here */
-  // check the function label
-  // esc::EscapeEntry* elem = env->Look(func_);
-  // if(elem && elem->depth_ < depth) {
-  //   *elem->escape_ = true;
-  // }
 
   // check the arguments
   std::list<Exp *> exps = args_->GetList();
@@ -205,12 +200,6 @@ void TypeDec::Traverse(esc::EscEnvPtr env, int depth) {
     if(typeid(*(name_and_ty->ty_)) == typeid(type::RecordTy)) {
       absyn::RecordTy* record_ty = static_cast<absyn::RecordTy*>(name_and_ty->ty_);
       std::list<Field*> field_list = record_ty->record_->GetList();
-
-      // TODO: I don't understand
-      // for(auto field : field_list) {
-      //   field->escape_ = false;
-      //   env->Enter(name, new esc::EscapeEntry())
-      // }
     }
   }
 }

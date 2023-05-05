@@ -196,7 +196,6 @@ namespace col {
         temp::TempList *regs = reg_manager->Registers();
         auto reg_list = regs->GetList();
         for(auto reg : reg_list) {
-            // printf("the precolored: %d\n", reg->Int());
             precolored_regs.insert(reg);
         }
 

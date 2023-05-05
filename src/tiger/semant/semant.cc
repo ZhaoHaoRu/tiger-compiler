@@ -414,6 +414,17 @@ type::Ty *VoidExp::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
   return type::VoidTy::Instance();
 }
 
+// First pass
+// Only recursive functions themselves are entered into the venv with their prototypes 
+//  function name
+//  types of formal parameters
+//  type of return value 
+// Second pass
+//  Trans the body using the new environment
+//  The formal parameters are processed again
+//  This time entering params as env::VarEntrys
+
+
 void FunctionDec::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
                              int labelcount, err::ErrorMsg *errormsg) const {
   /* TODO: Put your lab4 code here */
@@ -465,6 +476,10 @@ void FunctionDec::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv,
   }
 }
 
+// for var x : type_id := exp, 
+// it must check that type_id and type of exp are compatible
+// if the type of exp is NilTy, 
+// type_id must be a RecordTy type
 void VarDec::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
                         err::ErrorMsg *errormsg) const {
   /* TODO: Put your lab4 code here */
@@ -535,7 +550,6 @@ void TypeDec::SemAnalyze(env::VEnvPtr venv, env::TEnvPtr tenv, int labelcount,
     while(typeid(*ptr) == typeid(type::NameTy)) {
       ptr = static_cast<type::NameTy*>(ptr)->ty_;
       if(static_cast<type::NameTy*>(ptr)->sym_ == static_cast<type::NameTy*>(cur)->sym_) {
-        // TODO: is pos important ?
         errormsg->Error(pos_, "illegal type cycle");
         return;
       }

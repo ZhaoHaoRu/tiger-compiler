@@ -87,14 +87,12 @@ namespace gc {
         }
 
         stack_pointer_ = sp;
-        // printf("stack_pointer: %lx, %lx\n", stack_pointer_, *sp);
 
         RecordInfo new_record_info;
         new_record_info.start_pos = start_pos;
         new_record_info.record_size = size;
         new_record_info.descriptor = std::string(descriptor);
         new_record_info.descriptor_size = descriptor_length;
-        // printf("alloc record size: %ld, the alloc pos: %lx, descriptor: %s\n", size, start_pos, descriptor);
         records_info.emplace_back(new_record_info);
         return start_pos;
     }
@@ -106,13 +104,11 @@ namespace gc {
         }
 
         stack_pointer_ = sp;
-        // printf("stack_pointer: %lx, %lx\n", stack_pointer_, *sp);
 
         ArrayInfo new_array_info;
         new_array_info.start_pos = start_pos;
         new_array_info.array_size = size;
         arrays_info.emplace_back(new_array_info);
-        // printf("alloc array size: %ld, the alloc pos: %lx\n", size, start_pos);
         return start_pos;
     }
 
@@ -164,10 +160,10 @@ namespace gc {
                     if (record.descriptor[j] == '1') {  // the field is a pointer
                         uint64_t field_addr = *((uint64_t *)(begin_addr + word_size * j));
                         MarkAddress(field_addr, active_records, active_arrays);
-                        active_records[i] = true;
-                        return;
                     }
                 }
+                active_records[i] = true;
+                return;
             }
         }
         
@@ -218,7 +214,6 @@ namespace gc {
                 FreeFrag new_free_frag;
                 new_free_frag.start_pos = arrays_info[i].start_pos;
                 new_free_frag.frag_size = arrays_info[i].array_size;
-                // printf("free array size: %ld, the alloc pos: %lx\n", new_free_frag.frag_size, new_free_frag.start_pos);
                 free_frags.emplace_back(new_free_frag);
             }
         }
@@ -262,9 +257,6 @@ namespace gc {
             }
             
             new_pointer_map.offsets = offsets;
-            // printf("ptrmap return address: %lx\n", return_address);
-            // printf("ptrmap framesize: %lx\n", frame_size);
-            // printf("ptrmap next address: %lx\n", next_address);
             assert(!ptrmap_info.count(return_address));
             ptrmap_info[return_address] = new_pointer_map;
 
@@ -275,6 +267,12 @@ namespace gc {
     }
 
     ///@brief find the ptrmap's according stack pos
+    /*At the beginning of each loop, sp points to the frame bottom of the function
+    *1. First - 8 (- 1 * uint64_t) to get the return address
+    *2. sp+framesize is the frame top of the function, and+offset is the pointer position
+    *3. +pointMap.frameSize/WORD_ SIZE+1 is the bottom of the next frame
+    *4. If it is the main function, terminate the loop
+    * */
     std::vector<uint64_t> DerivedHeap::RootFinding() {
         uint64_t *sp = stack_pointer_;  
         std::vector<uint64_t> result;
@@ -282,8 +280,7 @@ namespace gc {
 
         bool is_main = false;
         while (!is_main) {
-            uint64_t return_addr = *(sp - 1) + 5;
-            // printf("the actual return addr: %lx\n", return_addr);
+            uint64_t return_addr = *(sp - 1) + 5; // ?
             if (!ptrmap_info.count(return_addr)) {
                 break;
             }
@@ -296,7 +293,7 @@ namespace gc {
                 }
 
                 // find the next frame
-                sp = sp + (wanted_ptr_map.frame_size / word_size) + 1;
+                sp = sp + (wanted_ptr_map.frame_size / word_size) + 1; //  sp + offset + framesize
                 is_main = wanted_ptr_map.is_main;
             }
         }

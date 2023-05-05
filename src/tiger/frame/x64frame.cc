@@ -196,6 +196,12 @@ std::string *X64RegManager::GetRegisterName(temp::Temp *temp) {
   return temp_map_->Look(temp);
 }
 
+temp::TempList *X64RegManager::CallDefRegister() {
+  temp::TempList *result = CallerSaves();
+  result->Append(ReturnValue());
+  return result;
+}
+
 /* TODO: Put your lab5 code here */
 X64Frame::X64Frame(temp::Label *name, std::list<bool> formals){
   // initialize
@@ -282,7 +288,6 @@ assem::InstrList* ProcEntryExit2(assem::InstrList* body) {
 }
 
 
-// TODO: maybe need to supply
 assem::Proc* ProcEntryExit3(frame::Frame* frame, assem::InstrList* body) {
   std::string prologue, epilogue;
 

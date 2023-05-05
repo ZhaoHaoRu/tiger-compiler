@@ -75,6 +75,8 @@ public:
 
   [[nodiscard]] virtual std::string *GetRegisterName(temp::Temp *temp) = 0;
 
+  [[nodiscard]] virtual temp::TempList *CallDefRegister() = 0;
+
   temp::Map *temp_map_;
 protected:
   std::vector<temp::Temp *> regs_;

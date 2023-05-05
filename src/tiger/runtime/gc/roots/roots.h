@@ -29,7 +29,6 @@ private:
   fg::FGraphPtr flowgraph_;
   std::vector<int> escape_var_;
   temp::Map *color_;
-  ///@note address_in and address_out, whether it is necessary?
   std::map<fg::FNodePtr, std::unordered_set<int>> address_in_;
   std::map<fg::FNodePtr, std::unordered_set<int>> address_out_;
   std::map<fg::FNodePtr, temp::TempList*> temp_in_;
@@ -57,12 +56,10 @@ private:
         found_use = true;
         std::string offset = src_str.substr(plus_op_pos + 1, close_pos - plus_op_pos);
         use = stoi(offset);
-        printf("instr: %s, use: %d\n", instr->getAssem().c_str(), use);
       } else if (minus_op_pos != std::string::npos && close_pos != std::string::npos) {
         found_use = true;
         std::string offset = src_str.substr(minus_op_pos, close_pos - minus_op_pos);
         use = stoi(offset);
-        printf("instr: %s, use: %d\n", instr->getAssem().c_str(), use);
       }
 
     } else if (dst_str.find("framesize") != std::string::npos && dst_str[0] == '(') {
@@ -141,7 +138,6 @@ private:
         std::size_t comma_pos = leaq_assem.find("("), space_pos = leaq_assem.find(" ");
         std::string frame_name = leaq_assem.substr(space_pos + 1, comma_pos - space_pos - 1);
         std::string new_assem = leaq_assem.substr(0, space_pos + 1) + "(" + frame_name + offset_str + ')' + leaq_assem.substr(comma_pos);
-        // printf("new assem: %s\n", new_assem.c_str());
         auto new_instr = new assem::OperInstr(new_assem, static_cast<assem::OperInstr*>(instr)->dst_,
            static_cast<assem::OperInstr*>(instr)->src_, nullptr);
         
@@ -230,25 +226,7 @@ public:
         }
       }
 
-      printf("same count: %d, node_count: %d\n", same_count, node_count);
       if (same_count == node_count) {
-        ///@note print for debug
-        // for (auto node : f_nodes) {
-        //   assem::Instr *instr = node->NodeInfo();
-        //   if (typeid(*instr) != typeid(assem::LabelInstr)) {
-        //     printf("instr: %s\n", instr->getAssem().c_str());
-        //     printf("address in: ");
-        //     for (auto elem : address_in_[node]) {
-        //       printf("%d ", elem);
-        //     }
-        //     printf("\n");
-        //     printf("address out: ");
-        //     for (auto elem : address_out_[node]) {
-        //       printf("%d ", elem);
-        //     }
-        //     printf("\n");
-        //   }
-        // }
         break;
       }
     }
@@ -256,7 +234,6 @@ public:
   
 
   void TempLiveness() {
-    // TODO: maybe need to modify
     live::LiveGraphFactory livegraph_factory(flowgraph_);
     livegraph_factory.Liveness();
     auto in_table = livegraph_factory.in_.get();
@@ -267,7 +244,7 @@ public:
     }
   }
 
-
+  // check callee-saved which save pointer and frame pointer
   void HandleCallRelatedPointer() {
     temp::TempList *callee_saves = reg_manager->CalleeSaves();
     std::list<temp::Temp*> callee_save_list = callee_saves->GetList();
@@ -290,13 +267,6 @@ public:
         is_return_pos = false;
 
         valid_addrs[instr] = address_in_[node];
-
-        // add pointers in frame
-        // for (auto access : frame_->locals_) {
-        //   auto in_frame_access = static_cast<frame::InFrameAccess*>(access);
-        //   valid_addrs[instr].insert(in_frame_access->offset);
-        // }
-
         valid_temps[instr] = std::unordered_set<std::string>();
 
         assert(temp_in_.count(node));
@@ -306,7 +276,6 @@ public:
           if (temp->store_pointer_) {
             std::string *color = color_->Look(temp);
             if (callee_save_set.count(color)) {
-              printf("the pointer in register found: the color %s, the temp %d\n", (*color).c_str(), temp->Int());
               valid_temps[instr].insert(*color);
             }
           }
@@ -356,35 +325,24 @@ public:
 
 
   std::vector<PointerMap> generatePointerMap() {
-    printf("merge moves\n");
     // MergeMove();
-    printf("begin address liveness\n");
     AddressLiveness();
-    printf("begin temp liveness\n");
     TempLiveness();
-    printf("begin call related\n");
     HandleCallRelatedPointer();
-    printf("begin rewrite the program\n");
     RewriteProgram();
-    printf("finish rewrite the program\n");
 
     std::vector<PointerMap> result;
     bool is_main = false;
+    // handle nesting
     std::string frame_name = frame_->label_->Name();
     if (frame_name == "tigermain") {
       is_main = true;
     }
 
-    printf("get line 378\n");
     for (auto elem : valid_addrs) {
       PointerMap new_map;
       new_map.frame_size = frame_name + "_framesize";
-      printf("the assem: %s\n", elem.first->getAssem().c_str());
-      printf("the offset: ");
-      for (auto offset : elem.second) {
-        printf("%d ", offset);
-      }
-      printf("\n");
+      
       assert(typeid(*elem.first) == typeid(assem::LabelInstr));
       new_map.return_label = static_cast<assem::LabelInstr*>(elem.first)->label_->Name();
       new_map.label = "Lmap_" + new_map.return_label;
@@ -399,14 +357,12 @@ public:
       result.emplace_back(new_map);
     }
 
-    printf("get line 402\n");
     // fill next label
     int n = result.size();
     for (int i = 0; i < n - 1; ++i) {
       result[i].next_label = result[i + 1].label;
     }
 
-    printf("get line 409\n");
     if (n != 0) {
       result[n - 1].next_label = "0";
     }

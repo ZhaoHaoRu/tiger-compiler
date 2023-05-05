@@ -42,6 +42,8 @@ public:
   [[nodiscard]] std::string *NthRegisterName(int n) override;
 
   [[nodiscard]] std::string *GetRegisterName(temp::Temp *temp) override;
+
+  [[nodiscard]] temp::TempList *CallDefRegister() override;
 };
 
 
@@ -50,7 +52,6 @@ public:
   /* TODO: Put your lab5 code here */
   X64Frame(temp::Label *name, std::list<bool> formals);
 
-  // TODO: maybe have some problem
   void newFrame(std::list<bool> formals) override;
 
   Access* AllocLocal(bool escape) override;

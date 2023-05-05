@@ -160,7 +160,6 @@ void LiveGraphFactory::SmartLiveMap() {
       }
     }
 
-    // printf("the counter: %d, the total count: %d\n", counter, total_count);
     if(counter == total_count) {
       break;
     } else {
@@ -184,7 +183,6 @@ void LiveGraphFactory::SmartLiveMap() {
     out_->Enter(node, new_out);
   }
 
-  printf("finish SmartLiveMap\n");
 }
 
 void LiveGraphFactory::LiveMap() {
@@ -237,7 +235,6 @@ void LiveGraphFactory::LiveMap() {
       }
     }
 
-    // printf("the counter: %d, the total count: %d\n", counter, total_count);
     if(counter == total_count) {
       break;
     } else {
@@ -296,7 +293,6 @@ void LiveGraphFactory::InterfGraph() {
       auto out_live_list = out_live->GetList();
 
       for(auto live_reg : out_live_list) {
-      // for(auto live_reg : live_and_def_list) {
         for(auto def_reg : def_list) {
           if(live_reg == reg_manager->StackPointer() || def_reg == reg_manager->StackPointer()
               || live_reg == def_reg) {
@@ -356,11 +352,8 @@ void LiveGraphFactory::InterfGraph() {
 }
 
 void LiveGraphFactory::Liveness() {
-  // LiveMap();
   SmartLiveMap();
-  printf("begin InterfGraph\n");
   InterfGraph();
-  printf("finish InterfGraph\n");
 }
 
 } // namespace live
